@@ -213,9 +213,26 @@ def download_file(url: str, dest_path: Path, timeout: int = 120) -> bool:
         return False
 
 
-def save_paper(paper: dict, base_dir: Path, download_pdf: bool = True, download_source: bool = True, max_source_mb: int = 200) -> Path:
+def extract_text_from_pdf(pdf_path: Path) -> str | None:
+    """Extract text from PDF using PyMuPDF (fitz)."""
+    try:
+        import fitz
+        doc = fitz.open(pdf_path)
+        text_parts = []
+        for page in doc:
+            text_parts.append(page.get_text())
+        doc.close()
+        return "\n\n".join(text_parts)
+    except Exception as e:
+        console.print(f"[yellow]Failed to extract text from {pdf_path}: {e}[/yellow]")
+        return None
+
+
+def save_paper(paper: dict, base_dir: Path, download_pdf: bool = True, download_source: bool = True, extract_text: bool = False, max_source_mb: int = 200) -> Path:
     """
     Save paper metadata and optionally download PDF + source.
+    
+    If extract_text=True, downloads PDF, extracts text, saves .txt, deletes PDF.
     
     Returns path to paper directory.
     """
@@ -227,8 +244,27 @@ def save_paper(paper: dict, base_dir: Path, download_pdf: bool = True, download_
     with open(metadata_path, "w") as f:
         json.dump(paper, f, indent=2)
     
-    # Download PDF
-    if download_pdf:
+    # Handle text extraction mode
+    if extract_text:
+        text_path = paper_dir / "paper.txt"
+        if not text_path.exists():
+            # Download PDF to temp location
+            pdf_path = paper_dir / "paper.pdf"
+            if download_file(paper["pdf_url"], pdf_path):
+                # Extract text
+                text = extract_text_from_pdf(pdf_path)
+                if text:
+                    with open(text_path, "w", encoding="utf-8") as f:
+                        f.write(text)
+                # Delete PDF to save space
+                try:
+                    pdf_path.unlink()
+                except Exception:
+                    pass
+            time.sleep(0.5)  # Be nice to arXiv
+    
+    # Download PDF (only if not in extract_text mode)
+    elif download_pdf:
         pdf_path = paper_dir / "paper.pdf"
         if not pdf_path.exists():
             download_file(paper["pdf_url"], pdf_path)
@@ -314,6 +350,7 @@ def main():
     parser.add_argument("--config", default="config.yaml", help="Config file path")
     parser.add_argument("--no-pdf", action="store_true", help="Skip PDF download")
     parser.add_argument("--no-source", action="store_true", help="Skip source download")
+    parser.add_argument("--extract-text", action="store_true", help="Extract text from PDFs and save as .txt (deletes PDFs to save space)")
     parser.add_argument("--categories", help="Comma-separated list of categories (overrides config)")
     parser.add_argument("--tier", type=int, choices=[1, 2, 3], help="Only fetch specific tier")
     args = parser.parse_args()
@@ -361,9 +398,13 @@ def main():
     
     # Save papers
     storage_config = config.get("storage", {})
-    download_pdf = storage_config.get("download_pdf", True) and not args.no_pdf
+    extract_text = args.extract_text or storage_config.get("extract_text", False)
+    download_pdf = storage_config.get("download_pdf", True) and not args.no_pdf and not extract_text
     download_source = storage_config.get("download_source", True) and not args.no_source
     max_source_mb = storage_config.get("max_source_size_mb", 200)
+    
+    if extract_text:
+        console.print("[cyan]Text extraction mode: PDFs will be converted to .txt[/cyan]")
     
     with Progress(
         SpinnerColumn(),
@@ -380,6 +421,7 @@ def main():
                 raw_dir, 
                 download_pdf=download_pdf,
                 download_source=download_source,
+                extract_text=extract_text,
                 max_source_mb=max_source_mb
             )
             
