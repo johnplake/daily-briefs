@@ -5,6 +5,7 @@ Semantic search over paper embeddings.
 Supports:
 - Query search: Find papers matching a text query
 - Similar papers: Find papers similar to a given paper
+- Full-text search: Keyword search in titles and abstracts
 """
 
 import argparse
@@ -13,167 +14,223 @@ import sqlite3
 from pathlib import Path
 
 import faiss
-import numpy as np
 from rich.console import Console
 from rich.table import Table
 from sentence_transformers import SentenceTransformer
 
 console = Console()
 
+# Project paths
+PROJECT_ROOT = Path(__file__).parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "papers.db"
+INDEX_DIR = PROJECT_ROOT / "data" / "embeddings"
+
 MODEL_NAME = "sentence-transformers/allenai-specter"
 
 
-def load_index(index_dir: Path) -> tuple:
-    """Load FAISS index and paper ID mapping."""
-    index_path = index_dir / "faiss.index"
-    ids_path = index_dir / "paper_ids.json"
-    
-    if not index_path.exists() or not ids_path.exists():
-        return None, [], {}
-    
-    index = faiss.read_index(str(index_path))
-    with open(ids_path) as f:
-        paper_ids = json.load(f)
-    id_to_idx = {pid: idx for idx, pid in enumerate(paper_ids)}
-    
-    return index, paper_ids, id_to_idx
+def get_db_connection() -> sqlite3.Connection:
+    """Get database connection."""
+    if not DB_PATH.exists():
+        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def get_paper_metadata(conn: sqlite3.Connection, arxiv_ids: list) -> dict:
-    """Get metadata for papers by arxiv_id."""
-    placeholders = ",".join("?" * len(arxiv_ids))
+def load_index() -> faiss.Index | None:
+    """Load FAISS index."""
+    index_path = INDEX_DIR / "faiss.index"
+    
+    if not index_path.exists():
+        return None
+    
+    return faiss.read_index(str(index_path))
+
+
+def get_papers_by_embedding_idx(conn: sqlite3.Connection, indices: list) -> dict:
+    """Get paper metadata by embedding_idx values."""
+    if not indices:
+        return {}
+    
+    placeholders = ",".join("?" * len(indices))
     cursor = conn.execute(
-        f"SELECT arxiv_id, title, authors, primary_category FROM papers WHERE arxiv_id IN ({placeholders})",
-        arxiv_ids
+        f"""SELECT embedding_idx, paper_id, title, authors, primary_category, 
+                   announced_date, arxiv_url, citations_s2
+            FROM papers 
+            WHERE embedding_idx IN ({placeholders})""",
+        indices
     )
     
     results = {}
     for row in cursor.fetchall():
-        arxiv_id, title, authors, category = row
-        results[arxiv_id] = {
-            "title": title,
-            "authors": json.loads(authors) if authors else [],
-            "category": category,
-        }
+        results[row["embedding_idx"]] = dict(row)
     return results
 
 
-def search_by_query(query: str, model: SentenceTransformer, index: faiss.Index, 
-                    paper_ids: list, k: int = 10) -> list:
+def get_paper_by_id(conn: sqlite3.Connection, paper_id: str) -> dict | None:
+    """Get paper by paper_id."""
+    cursor = conn.execute(
+        "SELECT * FROM papers WHERE paper_id = ?",
+        (paper_id,)
+    )
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+
+def search_by_query(query: str, model: SentenceTransformer, index: faiss.Index,
+                    conn: sqlite3.Connection, k: int = 10) -> list:
     """Search for papers matching a text query."""
     # Encode query
     query_embedding = model.encode([query]).astype('float32')
     faiss.normalize_L2(query_embedding)
     
-    # Search
+    # Search FAISS
     scores, indices = index.search(query_embedding, k)
+    
+    # Get paper metadata
+    valid_indices = [int(idx) for idx in indices[0] if idx >= 0]
+    papers_by_idx = get_papers_by_embedding_idx(conn, valid_indices)
     
     results = []
     for score, idx in zip(scores[0], indices[0]):
-        if idx >= 0:  # Valid index
-            results.append({
-                "arxiv_id": paper_ids[idx],
-                "score": float(score),
-            })
+        if idx >= 0 and idx in papers_by_idx:
+            paper = papers_by_idx[idx]
+            paper["score"] = float(score)
+            results.append(paper)
     
     return results
 
 
-def search_similar(arxiv_id: str, index: faiss.Index, paper_ids: list, 
-                   id_to_idx: dict, k: int = 10) -> list:
+def search_similar(paper_id: str, index: faiss.Index, conn: sqlite3.Connection,
+                   k: int = 10) -> list:
     """Find papers similar to a given paper."""
-    if arxiv_id not in id_to_idx:
+    paper = get_paper_by_id(conn, paper_id)
+    
+    if paper is None:
+        console.print(f"[yellow]Paper {paper_id} not found in database[/yellow]")
         return []
     
-    idx = id_to_idx[arxiv_id]
+    if paper["embedding_idx"] is None:
+        console.print(f"[yellow]Paper {paper_id} has no embedding[/yellow]")
+        return []
     
     # Reconstruct the paper's embedding
-    embedding = index.reconstruct(idx).reshape(1, -1)
+    embedding = index.reconstruct(paper["embedding_idx"]).reshape(1, -1)
     
     # Search (k+1 because the paper itself will be in results)
     scores, indices = index.search(embedding, k + 1)
     
+    # Get paper metadata (excluding the query paper)
+    valid_indices = [int(idx) for idx in indices[0] if idx >= 0 and idx != paper["embedding_idx"]]
+    papers_by_idx = get_papers_by_embedding_idx(conn, valid_indices[:k])
+    
     results = []
-    for score, result_idx in zip(scores[0], indices[0]):
-        if result_idx >= 0 and result_idx != idx:  # Skip self
-            results.append({
-                "arxiv_id": paper_ids[result_idx],
-                "score": float(score),
-            })
+    for score, idx in zip(scores[0], indices[0]):
+        if idx >= 0 and idx != paper["embedding_idx"] and idx in papers_by_idx:
+            paper_result = papers_by_idx[idx]
+            paper_result["score"] = float(score)
+            results.append(paper_result)
     
     return results[:k]
 
 
-def display_results(results: list, metadata: dict):
+def search_fulltext(query: str, conn: sqlite3.Connection, k: int = 10) -> list:
+    """Full-text search using FTS5."""
+    cursor = conn.execute(
+        """SELECT p.*, bm25(papers_fts) as score 
+           FROM papers p
+           JOIN papers_fts fts ON p.id = fts.rowid
+           WHERE papers_fts MATCH ?
+           ORDER BY score
+           LIMIT ?""",
+        (query, k)
+    )
+    
+    return [dict(row) for row in cursor.fetchall()]
+
+
+def display_results(results: list, show_score: bool = True):
     """Display search results in a table."""
     table = Table(title="Search Results")
-    table.add_column("Score", style="cyan", width=6)
-    table.add_column("arXiv ID", style="green", width=12)
-    table.add_column("Title", style="white", max_width=60)
-    table.add_column("Category", style="yellow", width=10)
+    if show_score:
+        table.add_column("Score", style="cyan", width=6)
+    table.add_column("Paper ID", style="green", width=12)
+    table.add_column("Title", style="white", max_width=55)
+    table.add_column("Category", style="yellow", width=8)
+    table.add_column("Date", style="blue", width=10)
     
     for r in results:
-        arxiv_id = r["arxiv_id"]
-        score = f"{r['score']:.3f}"
-        meta = metadata.get(arxiv_id, {})
-        title = meta.get("title", "Unknown")[:60]
-        category = meta.get("category", "")
-        
-        table.add_row(score, arxiv_id, title, category)
+        row_data = []
+        if show_score:
+            row_data.append(f"{r.get('score', 0):.3f}")
+        row_data.extend([
+            r.get("paper_id", ""),
+            (r.get("title", "")[:55] + "...") if len(r.get("title", "")) > 55 else r.get("title", ""),
+            r.get("primary_category", ""),
+            r.get("announced_date", ""),
+        ])
+        table.add_row(*row_data)
     
     console.print(table)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Search paper embeddings")
-    parser.add_argument("--query", "-q", help="Text query to search for")
-    parser.add_argument("--similar", "-s", help="Find papers similar to this arXiv ID")
+    parser.add_argument("--query", "-q", help="Semantic search query")
+    parser.add_argument("--similar", "-s", help="Find papers similar to this paper ID")
+    parser.add_argument("--fulltext", "-f", help="Full-text keyword search")
     parser.add_argument("--k", type=int, default=10, help="Number of results")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
     
-    if not args.query and not args.similar:
-        console.print("[red]Provide --query or --similar[/red]")
+    if not args.query and not args.similar and not args.fulltext:
+        console.print("[red]Provide --query, --similar, or --fulltext[/red]")
         return
     
-    # Setup paths
-    project_root = Path(__file__).parent.parent
-    db_path = project_root / "data" / "index" / "papers.db"
-    index_dir = project_root / "data" / "embeddings"
+    conn = get_db_connection()
     
-    # Load index
-    index, paper_ids, id_to_idx = load_index(index_dir)
+    # Handle full-text search (doesn't need embeddings)
+    if args.fulltext:
+        results = search_fulltext(args.fulltext, conn, args.k)
+        if not results:
+            console.print("[yellow]No results found[/yellow]")
+            return
+        
+        if args.json:
+            print(json.dumps(results, indent=2, default=str))
+        else:
+            display_results(results, show_score=True)
+        conn.close()
+        return
+    
+    # Load FAISS index for semantic search
+    index = load_index()
     
     if index is None:
         console.print("[red]No embedding index found. Run embed.py first.[/red]")
         return
     
-    console.print(f"[cyan]Index contains {len(paper_ids)} papers[/cyan]")
+    console.print(f"[cyan]Index contains {index.ntotal} vectors[/cyan]")
     
-    # Search
+    # Semantic search
     if args.query:
         console.print(f"[cyan]Loading model for query encoding...[/cyan]")
         model = SentenceTransformer(MODEL_NAME)
-        results = search_by_query(args.query, model, index, paper_ids, args.k)
+        results = search_by_query(args.query, model, index, conn, args.k)
     else:
-        results = search_similar(args.similar, index, paper_ids, id_to_idx, args.k)
-        if not results:
-            console.print(f"[yellow]Paper {args.similar} not found in index[/yellow]")
-            return
+        results = search_similar(args.similar, index, conn, args.k)
     
-    # Get metadata
-    conn = sqlite3.connect(db_path)
-    arxiv_ids = [r["arxiv_id"] for r in results]
-    metadata = get_paper_metadata(conn, arxiv_ids)
     conn.close()
+    
+    if not results:
+        console.print("[yellow]No results found[/yellow]")
+        return
     
     # Output
     if args.json:
-        for r in results:
-            r.update(metadata.get(r["arxiv_id"], {}))
-        print(json.dumps(results, indent=2))
+        print(json.dumps(results, indent=2, default=str))
     else:
-        display_results(results, metadata)
+        display_results(results)
 
 
 if __name__ == "__main__":

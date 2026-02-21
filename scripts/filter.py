@@ -14,6 +14,7 @@ Also selects feedback candidates:
 
 import argparse
 import json
+import math
 import random
 import re
 import sqlite3
@@ -25,30 +26,52 @@ from rich.table import Table
 
 console = Console()
 
+# Project paths
+PROJECT_ROOT = Path(__file__).parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "papers.db"
 
-def load_config(config_path: str = "config.yaml") -> dict:
+
+def load_config(config_path: str = None) -> dict:
     """Load configuration from YAML file."""
+    if config_path is None:
+        config_path = PROJECT_ROOT / "config.yaml"
     with open(config_path) as f:
         return yaml.safe_load(f)
 
 
+def get_db_connection() -> sqlite3.Connection:
+    """Get database connection."""
+    if not DB_PATH.exists():
+        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
 def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list:
-    """Get all papers ingested on a specific date."""
+    """Get all papers announced on a specific date."""
     cursor = conn.execute("""
-        SELECT arxiv_id, title, abstract, primary_category, categories,
-               s2_citation_count, s2_influential_citations, openalex_cited_by_count,
-               local_path, authors
+        SELECT paper_id, title, abstract, primary_category, categories,
+               citations_s2, citations_oa, authors, arxiv_url, announced_date
         FROM papers
-        WHERE ingest_date = ?
+        WHERE announced_date = ?
     """, (date,))
     
-    columns = [desc[0] for desc in cursor.description]
     papers = []
     for row in cursor.fetchall():
-        paper = dict(zip(columns, row))
+        paper = dict(row)
         # Parse JSON fields
-        paper["categories"] = json.loads(paper["categories"]) if paper["categories"] else []
-        paper["authors"] = json.loads(paper["authors"]) if paper["authors"] else []
+        if paper["authors"]:
+            try:
+                paper["authors"] = json.loads(paper["authors"])
+            except json.JSONDecodeError:
+                paper["authors"] = []
+        else:
+            paper["authors"] = []
+        
+        # Categories is space-separated
+        paper["categories_list"] = paper["categories"].split() if paper["categories"] else []
+        
         papers.append(paper)
     
     return papers
@@ -70,48 +93,39 @@ def get_tier(category: str, config: dict) -> int:
 def compute_keyword_score(paper: dict, keywords: list) -> float:
     """
     Compute keyword match score for a paper.
-    
     Simple TF-based scoring with title weighted higher than abstract.
     """
-    title = paper["title"].lower()
-    abstract = paper["abstract"].lower()
+    title = (paper["title"] or "").lower()
+    abstract = (paper["abstract"] or "").lower()
     
     title_matches = 0
     abstract_matches = 0
     
     for keyword in keywords:
         kw_lower = keyword.lower()
-        # Count occurrences
         title_matches += len(re.findall(r'\b' + re.escape(kw_lower) + r'\b', title))
         abstract_matches += len(re.findall(r'\b' + re.escape(kw_lower) + r'\b', abstract))
     
     # Title matches weighted 3x
     score = (title_matches * 3 + abstract_matches) / max(len(keywords), 1)
     
-    return min(score, 1.0)  # Cap at 1.0
+    return min(score, 1.0)
 
 
 def compute_popularity_score(paper: dict) -> float:
     """
     Compute popularity score based on citation metrics.
-    
-    For new papers, this will often be 0. We use influential citations
-    as a stronger signal when available.
+    For new papers, this will often be 0.
     """
-    citations = paper.get("s2_citation_count") or 0
-    influential = paper.get("s2_influential_citations") or 0
-    openalex_citations = paper.get("openalex_cited_by_count") or 0
+    citations_s2 = paper.get("citations_s2") or 0
+    citations_oa = paper.get("citations_oa") or 0
     
-    # Normalize (these are low for new papers)
     # Use log scale to prevent outliers from dominating
-    import math
+    s2_score = math.log1p(citations_s2) / 10
+    oa_score = math.log1p(citations_oa) / 10
     
-    citation_score = math.log1p(citations) / 10  # log(1 + x), normalized
-    influential_score = math.log1p(influential) / 5  # Weighted higher
-    openalex_score = math.log1p(openalex_citations) / 10
-    
-    # Combined score (influential weighted heavily)
-    score = 0.3 * citation_score + 0.5 * influential_score + 0.2 * openalex_score
+    # Combined score
+    score = 0.6 * s2_score + 0.4 * oa_score
     
     return min(score, 1.0)
 
@@ -119,20 +133,17 @@ def compute_popularity_score(paper: dict) -> float:
 def compute_combined_score(paper: dict, config: dict) -> dict:
     """
     Compute all scores for a paper.
-    
     Returns dict with individual scores and combined score.
     """
     interests = config.get("interests", {})
     keywords = interests.get("keywords", [])
     project_contexts = interests.get("project_contexts", [])
     
-    # All keywords and project terms
     all_terms = keywords + project_contexts
     
     keyword_score = compute_keyword_score(paper, all_terms)
     popularity_score = compute_popularity_score(paper)
     
-    # Tier affects threshold, not score directly
     tier = get_tier(paper["primary_category"], config)
     
     # Combined score for ranking
@@ -173,7 +184,6 @@ def filter_papers(papers: list, config: dict) -> dict:
         paper.update(scores)
         scored_papers.append(paper)
     
-    # Determine threshold per paper based on tier
     def get_threshold(paper):
         tier = paper["tier"]
         if tier == 1:
@@ -182,7 +192,7 @@ def filter_papers(papers: list, config: dict) -> dict:
             return tier2_threshold
         elif tier == 3:
             return tier3_threshold
-        return 0.9  # Unknown category = very high bar
+        return 0.9
     
     # Separate papers
     popular = []
@@ -193,15 +203,12 @@ def filter_papers(papers: list, config: dict) -> dict:
     for paper in scored_papers:
         threshold = get_threshold(paper)
         
-        # Check if passes threshold
         if paper["combined_score"] >= threshold:
-            # Classify into popular vs interest
             if paper["popularity_score"] > paper["keyword_score"]:
                 popular.append(paper)
             else:
                 interest.append(paper)
         else:
-            # Check if near miss (within 20% of threshold)
             if paper["combined_score"] >= threshold * 0.8:
                 near_misses.append(paper)
             else:
@@ -220,7 +227,6 @@ def filter_papers(papers: list, config: dict) -> dict:
     low_rejected = [p for p in rejected if p["combined_score"] <= 0.05]
     random_negatives = random.sample(low_rejected, min(random_negative_count, len(low_rejected)))
     
-    # Trim near misses
     near_misses = near_misses[:near_miss_count]
     
     return {
@@ -237,7 +243,6 @@ def filter_papers(papers: list, config: dict) -> dict:
 
 def save_filtered_results(results: dict, output_path: Path):
     """Save filtered results to JSON."""
-    # Convert to serializable format
     output = {
         "popular": results["popular"],
         "interest": results["interest"],
@@ -254,7 +259,7 @@ def save_filtered_results(results: dict, output_path: Path):
     }
     
     with open(output_path, "w") as f:
-        json.dump(output, f, indent=2)
+        json.dump(output, f, indent=2, default=str)
 
 
 def print_summary(results: dict):
@@ -278,41 +283,28 @@ def print_summary(results: dict):
 def main():
     parser = argparse.ArgumentParser(description="Filter papers into streams")
     parser.add_argument("--date", required=True, help="Date to filter (YYYY-MM-DD)")
-    parser.add_argument("--config", default="config.yaml", help="Config file path")
+    parser.add_argument("--config", help="Config file path")
     parser.add_argument("--output", help="Output JSON path (default: data/filtered/YYYY-MM-DD.json)")
     args = parser.parse_args()
     
     console.print(f"[bold green]Filtering papers for {args.date}[/bold green]")
     
-    # Load config
     config = load_config(args.config)
+    conn = get_db_connection()
     
-    # Setup paths
-    project_root = Path(__file__).parent.parent
-    db_path = project_root / "data" / "index" / "papers.db"
-    
-    if not db_path.exists():
-        console.print("[red]Database not found. Run ingest.py first.[/red]")
-        return
-    
-    conn = sqlite3.connect(db_path)
-    
-    # Get papers
     papers = get_papers_for_date(conn, args.date)
     console.print(f"Papers to filter: {len(papers)}")
     
     if not papers:
         console.print("[yellow]No papers found for this date.[/yellow]")
+        conn.close()
         return
     
-    # Filter
     results = filter_papers(papers, config)
-    
-    # Print summary
     print_summary(results)
     
     # Save results
-    output_dir = project_root / "data" / "filtered"
+    output_dir = PROJECT_ROOT / "data" / "filtered"
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = Path(args.output) if args.output else output_dir / f"{args.date}.json"
     

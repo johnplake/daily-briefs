@@ -2,162 +2,160 @@
 """
 Paper embedding script.
 
-Generates SPECTER2 embeddings for papers and builds a FAISS index
+Generates SPECTER embeddings for papers and builds a FAISS index
 for fast similarity search.
 
-Embeddings are computed from title + abstract (or full text if available).
+Embeddings are computed from title + abstract.
+The embedding_idx column in the database maps papers to FAISS index positions.
 """
 
 import argparse
-import json
 import sqlite3
 from pathlib import Path
 
 import faiss
 import numpy as np
-import yaml
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from sentence_transformers import SentenceTransformer
 
 console = Console()
 
-# SPECTER model for scientific papers (sentence-transformers compatible)
+# Project paths
+PROJECT_ROOT = Path(__file__).parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "papers.db"
+INDEX_DIR = PROJECT_ROOT / "data" / "embeddings"
+
+# SPECTER model for scientific papers
 MODEL_NAME = "sentence-transformers/allenai-specter"
 EMBEDDING_DIM = 768
 
 
-def load_config(config_path: str = "config.yaml") -> dict:
-    """Load configuration from YAML file."""
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+def get_db_connection() -> sqlite3.Connection:
+    """Get database connection."""
+    if not DB_PATH.exists():
+        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def get_papers_to_embed(conn: sqlite3.Connection, existing_ids: set, date_filter: str = None) -> list:
-    """Get papers that need embedding."""
-    query = "SELECT arxiv_id, title, abstract, local_path FROM papers"
+def get_current_index_size() -> int:
+    """Get the current size of the FAISS index (number of vectors)."""
+    index_path = INDEX_DIR / "faiss.index"
+    if index_path.exists():
+        try:
+            index = faiss.read_index(str(index_path))
+            return index.ntotal
+        except Exception:
+            return 0
+    return 0
+
+
+def get_papers_to_embed(conn: sqlite3.Connection, date_filter: str = None,
+                        limit: int = None) -> list:
+    """Get papers that need embedding (have text but no embedding_idx)."""
+    query = """
+        SELECT id, paper_id, title, abstract, paper_source, announced_date
+        FROM papers
+        WHERE embedding_idx IS NULL
+          AND (abstract IS NOT NULL AND abstract != '')
+    """
+    
     if date_filter:
-        query += f" WHERE ingest_date = '{date_filter}'"
+        query += f" AND announced_date = '{date_filter}'"
+    
+    query += " ORDER BY announced_date DESC, id"
+    
+    if limit:
+        query += f" LIMIT {limit}"
     
     cursor = conn.execute(query)
-    papers = []
-    for row in cursor.fetchall():
-        arxiv_id, title, abstract, local_path = row
-        if arxiv_id not in existing_ids:
-            papers.append({
-                "arxiv_id": arxiv_id,
-                "title": title,
-                "abstract": abstract,
-                "local_path": local_path,
-            })
-    return papers
+    return cursor.fetchall()
 
 
 def get_paper_text(paper: dict) -> str:
     """
     Get text to embed for a paper.
-    
-    Uses title + abstract by default.
-    If full text exists, uses title + first 5000 chars of full text.
+    Uses title + abstract (SPECTER is trained on this).
     """
-    title = paper.get("title", "")
-    abstract = paper.get("abstract", "")
+    title = paper["title"] or ""
+    abstract = paper["abstract"] or ""
     
-    # Check for extracted full text
-    local_path = paper.get("local_path")
-    if local_path:
-        text_path = Path(local_path) / "paper.txt"
-        if text_path.exists():
-            try:
-                with open(text_path, "r", encoding="utf-8") as f:
-                    full_text = f.read()[:5000]  # First 5000 chars
-                return f"{title}\n\n{full_text}"
-            except Exception:
-                pass
-    
-    # Fallback to title + abstract
-    return f"{title}\n\n{abstract}"
+    # SPECTER expects title [SEP] abstract format
+    return f"{title} [SEP] {abstract}"
 
 
-def load_existing_index(index_dir: Path) -> tuple:
-    """
-    Load existing FAISS index and paper ID mapping.
+def load_or_create_index() -> faiss.Index:
+    """Load existing FAISS index or create new one."""
+    index_path = INDEX_DIR / "faiss.index"
     
-    Returns (index, paper_ids, id_to_idx) or (None, [], {}) if not found.
-    """
-    index_path = index_dir / "faiss.index"
-    ids_path = index_dir / "paper_ids.json"
-    
-    if index_path.exists() and ids_path.exists():
+    if index_path.exists():
         try:
             index = faiss.read_index(str(index_path))
-            with open(ids_path) as f:
-                paper_ids = json.load(f)
-            id_to_idx = {pid: idx for idx, pid in enumerate(paper_ids)}
-            console.print(f"[cyan]Loaded existing index with {len(paper_ids)} papers[/cyan]")
-            return index, paper_ids, id_to_idx
+            console.print(f"[cyan]Loaded existing index with {index.ntotal} vectors[/cyan]")
+            return index
         except Exception as e:
-            console.print(f"[yellow]Failed to load existing index: {e}[/yellow]")
+            console.print(f"[yellow]Failed to load index: {e}. Creating new.[/yellow]")
     
-    return None, [], {}
+    # Create new index (Inner Product = cosine similarity on normalized vectors)
+    INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    index = faiss.IndexFlatIP(EMBEDDING_DIM)
+    console.print("[cyan]Created new FAISS index[/cyan]")
+    return index
 
 
-def save_index(index: faiss.Index, paper_ids: list, index_dir: Path):
-    """Save FAISS index and paper ID mapping."""
-    index_dir.mkdir(parents=True, exist_ok=True)
-    
-    index_path = index_dir / "faiss.index"
-    ids_path = index_dir / "paper_ids.json"
-    
+def save_index(index: faiss.Index):
+    """Save FAISS index."""
+    INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    index_path = INDEX_DIR / "faiss.index"
     faiss.write_index(index, str(index_path))
-    with open(ids_path, "w") as f:
-        json.dump(paper_ids, f)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate paper embeddings")
     parser.add_argument("--date", help="Only embed papers from this date (YYYY-MM-DD)")
-    parser.add_argument("--config", default="config.yaml", help="Config file path")
     parser.add_argument("--batch-size", type=int, default=32, help="Batch size for embedding")
+    parser.add_argument("--limit", type=int, help="Limit number of papers to embed")
     parser.add_argument("--rebuild", action="store_true", help="Rebuild entire index from scratch")
     args = parser.parse_args()
     
-    console.print("[bold green]Paper Embedding with SPECTER2[/bold green]")
+    console.print("[bold green]Paper Embedding with SPECTER[/bold green]")
     
-    # Setup paths
-    project_root = Path(__file__).parent.parent
-    db_path = project_root / "data" / "index" / "papers.db"
-    index_dir = project_root / "data" / "embeddings"
+    conn = get_db_connection()
     
-    if not db_path.exists():
-        console.print("[red]Database not found. Run ingest.py first.[/red]")
-        return
-    
-    # Load existing index (unless rebuilding)
+    # Handle rebuild
     if args.rebuild:
-        index, paper_ids, id_to_idx = None, [], {}
         console.print("[yellow]Rebuilding index from scratch[/yellow]")
-    else:
-        index, paper_ids, id_to_idx = load_existing_index(index_dir)
+        # Clear all embedding_idx values
+        conn.execute("UPDATE papers SET embedding_idx = NULL")
+        conn.commit()
+        # Delete existing index
+        index_path = INDEX_DIR / "faiss.index"
+        if index_path.exists():
+            index_path.unlink()
+    
+    # Get current index size (this will be the starting position for new embeddings)
+    start_idx = get_current_index_size()
     
     # Get papers to embed
-    conn = sqlite3.connect(db_path)
-    papers = get_papers_to_embed(conn, set(id_to_idx.keys()), args.date)
-    conn.close()
+    papers = get_papers_to_embed(conn, args.date, args.limit)
     
     if not papers:
-        console.print("[yellow]No new papers to embed.[/yellow]")
+        console.print("[yellow]No papers need embedding.[/yellow]")
+        conn.close()
         return
     
     console.print(f"Papers to embed: {len(papers)}")
+    console.print(f"Starting index position: {start_idx}")
     
     # Load model
     console.print(f"[cyan]Loading model: {MODEL_NAME}[/cyan]")
     model = SentenceTransformer(MODEL_NAME)
     
     # Prepare texts
-    texts = [get_paper_text(p) for p in papers]
-    new_ids = [p["arxiv_id"] for p in papers]
+    paper_data = [dict(row) for row in papers]
+    texts = [get_paper_text(p) for p in paper_data]
     
     # Generate embeddings in batches
     console.print(f"[cyan]Generating embeddings (batch size: {args.batch_size})...[/cyan]")
@@ -174,29 +172,39 @@ def main():
             batch = texts[i:i + args.batch_size]
             batch_embeddings = model.encode(batch, show_progress_bar=False)
             all_embeddings.append(batch_embeddings)
-            progress.update(task, advance=len(batch), description=f"Embedding {i + len(batch)}/{len(texts)}...")
+            progress.update(task, advance=len(batch), 
+                          description=f"Embedding {min(i + args.batch_size, len(texts))}/{len(texts)}...")
     
     # Combine embeddings
     new_embeddings = np.vstack(all_embeddings).astype('float32')
     
-    # Normalize for cosine similarity (FAISS IndexFlatIP)
+    # Normalize for cosine similarity
     faiss.normalize_L2(new_embeddings)
     
-    # Create or update index
-    if index is None:
-        # Create new index (Inner Product = cosine similarity on normalized vectors)
-        index = faiss.IndexFlatIP(EMBEDDING_DIM)
+    # Load or create index
+    index = load_or_create_index()
     
     # Add new embeddings
     index.add(new_embeddings)
-    paper_ids.extend(new_ids)
     
-    # Save
-    save_index(index, paper_ids, index_dir)
+    # Update database with embedding indices
+    console.print("[cyan]Updating database...[/cyan]")
+    for i, paper in enumerate(paper_data):
+        embedding_idx = start_idx + i
+        conn.execute(
+            "UPDATE papers SET embedding_idx = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (embedding_idx, paper["id"])
+        )
+    
+    conn.commit()
+    conn.close()
+    
+    # Save index
+    save_index(index)
     
     console.print(f"\n[bold green]✓ Embedded {len(papers)} papers[/bold green]")
-    console.print(f"[bold green]✓ Index now contains {len(paper_ids)} papers[/bold green]")
-    console.print(f"[bold green]✓ Saved to {index_dir}[/bold green]")
+    console.print(f"[bold green]✓ Index now contains {index.ntotal} vectors[/bold green]")
+    console.print(f"[bold green]✓ Saved to {INDEX_DIR}[/bold green]")
 
 
 if __name__ == "__main__":

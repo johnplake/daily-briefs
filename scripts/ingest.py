@@ -3,17 +3,17 @@
 arXiv paper ingestion script.
 
 Downloads papers from arXiv RSS feeds for specified categories.
-Handles deduplication and downloads PDF + source archives.
+Stores metadata in SQLite, extracted text in files.
 
 RSS feeds are more reliable than API date queries for daily updates.
 """
 
 import argparse
 import json
-import os
+import re
 import sqlite3
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import feedparser
@@ -24,17 +24,21 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
+# Project paths
+PROJECT_ROOT = Path(__file__).parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "papers.db"
+
 # arXiv endpoints
 ARXIV_RSS = "https://export.arxiv.org/rss/{}"
-ARXIV_PDF = "https://arxiv.org/pdf/{}.pdf"
-ARXIV_SOURCE = "https://arxiv.org/e-print/{}"
 
 # Rate limiting
 RATE_LIMIT_SECONDS = 1
 
 
-def load_config(config_path: str = "config.yaml") -> dict:
+def load_config(config_path: str = None) -> dict:
     """Load configuration from YAML file."""
+    if config_path is None:
+        config_path = PROJECT_ROOT / "config.yaml"
     with open(config_path) as f:
         return yaml.safe_load(f)
 
@@ -47,12 +51,17 @@ def get_all_categories(config: dict) -> list:
     return cats
 
 
+def get_db_connection() -> sqlite3.Connection:
+    """Get database connection."""
+    if not DB_PATH.exists():
+        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
 def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
-    """
-    Fetch papers from arXiv RSS feed for a category.
-    
-    Returns list of parsed entries.
-    """
+    """Fetch papers from arXiv RSS feed for a category."""
     url = ARXIV_RSS.format(category)
     
     for attempt in range(max_retries):
@@ -80,9 +89,12 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
     return []
 
 
-def extract_arxiv_id(entry: dict) -> str:
-    """Extract arXiv ID from entry link or id."""
-    # RSS entries have link like https://arxiv.org/abs/2602.16714
+def extract_arxiv_id(entry: dict) -> tuple[str, int]:
+    """
+    Extract arXiv ID and version from entry link or id.
+    
+    Returns (base_id, version) e.g., ("2502.12345", 2)
+    """
     link = entry.get("link", entry.get("id", ""))
     
     # Extract ID from URL
@@ -93,16 +105,19 @@ def extract_arxiv_id(entry: dict) -> str:
     else:
         arxiv_id = link
     
-    # Remove version suffix if present
-    if "v" in arxiv_id and arxiv_id[-2] == "v":
-        arxiv_id = arxiv_id.rsplit("v", 1)[0]
+    # Parse version
+    version = 1
+    match = re.match(r"(.+)v(\d+)$", arxiv_id)
+    if match:
+        arxiv_id = match.group(1)
+        version = int(match.group(2))
     
-    return arxiv_id
+    return arxiv_id, version
 
 
-def parse_entry(entry: dict, category: str) -> dict:
+def parse_entry(entry: dict, category: str, announced_date: str) -> dict:
     """Parse a single RSS entry into our metadata format."""
-    arxiv_id = extract_arxiv_id(entry)
+    arxiv_id, version = extract_arxiv_id(entry)
     
     # Get description/abstract
     description = entry.get("description", entry.get("summary", ""))
@@ -121,7 +136,6 @@ def parse_entry(entry: dict, category: str) -> dict:
     elif "author" in entry:
         authors = [entry["author"]]
     elif "dc_creator" in entry:
-        # Some RSS feeds use dc:creator
         creators = entry.get("dc_creator", "")
         if isinstance(creators, str):
             authors = [a.strip() for a in creators.split(",")]
@@ -129,37 +143,51 @@ def parse_entry(entry: dict, category: str) -> dict:
             authors = creators
     
     # Get categories from tags
-    categories = [category]  # Primary category from the feed we're fetching
+    categories = [category]
     for tag in entry.get("tags", []):
         term = tag.get("term", str(tag))
         if term and term not in categories:
             categories.append(term)
     
-    # Publication date
+    # Parse dates
     published = entry.get("published", entry.get("pubDate", ""))
+    updated = entry.get("updated", published)
+    
+    # Try to extract date only
+    submitted_date = None
+    if published:
+        try:
+            # RSS dates are often RFC 2822 format
+            from email.utils import parsedate_to_datetime
+            dt = parsedate_to_datetime(published)
+            submitted_date = dt.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    
+    # DOI if present
+    doi = entry.get("arxiv_doi", entry.get("doi", ""))
     
     return {
-        "arxiv_id": arxiv_id,
+        "paper_source": "arxiv",
+        "paper_id": arxiv_id,
+        "announced_date": announced_date,
         "title": entry.get("title", "").replace("\n", " ").strip(),
         "abstract": description.replace("\n", " ").strip(),
-        "authors": authors,
+        "authors": json.dumps(authors),
         "primary_category": category,
-        "categories": categories,
-        "published": published,
-        "updated": entry.get("updated", published),
-        "doi": entry.get("arxiv_doi", ""),
-        "journal_ref": entry.get("arxiv_journal_ref", ""),
-        "comment": entry.get("arxiv_comment", ""),
+        "categories": " ".join(categories),
+        "version": version,
+        "submitted_date": submitted_date,
+        "updated_date": announced_date if version > 1 else None,
+        "arxiv_url": f"https://arxiv.org/abs/{arxiv_id}",
         "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf",
-        "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
-        "source_url": f"https://arxiv.org/e-print/{arxiv_id}",
+        "doi": doi,
     }
 
 
-def fetch_all_papers(categories: list) -> list:
+def fetch_all_papers(categories: list, announced_date: str) -> list:
     """
     Fetch all papers from RSS feeds for given categories.
-    
     Returns deduplicated list of paper metadata.
     """
     all_papers = {}
@@ -177,17 +205,20 @@ def fetch_all_papers(categories: list) -> list:
             entries = fetch_rss_feed(category)
             
             for entry in entries:
-                paper = parse_entry(entry, category)
-                arxiv_id = paper["arxiv_id"]
+                paper = parse_entry(entry, category, announced_date)
+                paper_id = paper["paper_id"]
                 
-                if arxiv_id in all_papers:
+                if paper_id in all_papers:
                     # Merge categories if we've seen this paper before
-                    existing = all_papers[arxiv_id]
-                    for cat in paper["categories"]:
-                        if cat not in existing["categories"]:
-                            existing["categories"].append(cat)
+                    existing = all_papers[paper_id]
+                    existing_cats = set(existing["categories"].split())
+                    new_cats = set(paper["categories"].split())
+                    existing["categories"] = " ".join(existing_cats | new_cats)
+                    # Keep higher version
+                    if paper["version"] > existing["version"]:
+                        existing["version"] = paper["version"]
                 else:
-                    all_papers[arxiv_id] = paper
+                    all_papers[paper_id] = paper
             
             console.print(f"  {category}: {len(entries)} papers (total unique: {len(all_papers)})")
             
@@ -197,20 +228,12 @@ def fetch_all_papers(categories: list) -> list:
     return list(all_papers.values())
 
 
-def download_file(url: str, dest_path: Path, timeout: int = 120) -> bool:
-    """Download a file from URL to destination path."""
-    try:
-        response = requests.get(url, timeout=timeout, stream=True)
-        response.raise_for_status()
-        
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(dest_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        return True
-    except Exception as e:
-        console.print(f"[red]Failed to download {url}: {e}[/red]")
-        return False
+def get_text_path(paper: dict) -> Path:
+    """Get the path where paper text should be stored."""
+    return (
+        PROJECT_ROOT / "data" / paper["paper_source"] / 
+        paper["announced_date"] / paper["paper_id"] / "paper.txt"
+    )
 
 
 def extract_text_from_pdf(pdf_path: Path) -> str | None:
@@ -228,140 +251,142 @@ def extract_text_from_pdf(pdf_path: Path) -> str | None:
         return None
 
 
-def save_paper(paper: dict, base_dir: Path, download_pdf: bool = True, download_source: bool = True, extract_text: bool = False, max_source_mb: int = 200) -> Path:
+def download_and_extract_text(paper: dict) -> bool:
     """
-    Save paper metadata and optionally download PDF + source.
-    
-    If extract_text=True, downloads PDF, extracts text, saves .txt, deletes PDF.
-    
-    Returns path to paper directory.
+    Download PDF, extract text, save to file, delete PDF.
+    Returns True if text was extracted successfully.
     """
-    paper_dir = base_dir / paper["arxiv_id"].replace("/", "_")
-    paper_dir.mkdir(parents=True, exist_ok=True)
+    text_path = get_text_path(paper)
+    text_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Save metadata
-    metadata_path = paper_dir / "metadata.json"
-    with open(metadata_path, "w") as f:
-        json.dump(paper, f, indent=2)
+    # Download PDF to temp location
+    pdf_path = text_path.parent / "paper.pdf"
     
-    # Handle text extraction mode
-    if extract_text:
-        text_path = paper_dir / "paper.txt"
-        if not text_path.exists():
-            # Download PDF to temp location
-            pdf_path = paper_dir / "paper.pdf"
-            if download_file(paper["pdf_url"], pdf_path):
-                # Extract text
-                text = extract_text_from_pdf(pdf_path)
-                if text:
-                    with open(text_path, "w", encoding="utf-8") as f:
-                        f.write(text)
-                # Delete PDF to save space
-                try:
-                    pdf_path.unlink()
-                except Exception:
-                    pass
-            time.sleep(0.5)  # Be nice to arXiv
-    
-    # Download PDF (only if not in extract_text mode)
-    elif download_pdf:
-        pdf_path = paper_dir / "paper.pdf"
-        if not pdf_path.exists():
-            download_file(paper["pdf_url"], pdf_path)
-            time.sleep(0.5)  # Be nice to arXiv
-    
-    # Download source (with size check via HEAD request)
-    if download_source:
-        source_path = paper_dir / "source.tar.gz"
-        if not source_path.exists():
-            try:
-                # Check size first
-                head = requests.head(paper["source_url"], timeout=10)
-                content_length = int(head.headers.get("content-length", 0))
-                if content_length > 0 and content_length > max_source_mb * 1024 * 1024:
-                    console.print(f"[yellow]Skipping source for {paper['arxiv_id']} ({content_length / 1024 / 1024:.1f} MB > {max_source_mb} MB)[/yellow]")
-                else:
-                    download_file(paper["source_url"], source_path)
-                    time.sleep(0.5)
-            except Exception:
-                pass  # Source not always available
-    
-    return paper_dir
+    try:
+        response = requests.get(paper["pdf_url"], timeout=120, stream=True)
+        response.raise_for_status()
+        
+        with open(pdf_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        
+        # Extract text
+        text = extract_text_from_pdf(pdf_path)
+        if text:
+            with open(text_path, "w", encoding="utf-8") as f:
+                f.write(text)
+            # Delete PDF
+            pdf_path.unlink(missing_ok=True)
+            return True
+        else:
+            pdf_path.unlink(missing_ok=True)
+            return False
+            
+    except Exception as e:
+        console.print(f"[yellow]Failed to download {paper['paper_id']}: {e}[/yellow]")
+        pdf_path.unlink(missing_ok=True)
+        return False
 
 
-def init_database(db_path: Path) -> sqlite3.Connection:
-    """Initialize SQLite database for paper index."""
-    conn = sqlite3.connect(db_path)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS papers (
-            arxiv_id TEXT PRIMARY KEY,
-            title TEXT,
-            abstract TEXT,
-            authors TEXT,
-            primary_category TEXT,
-            categories TEXT,
-            published TEXT,
-            updated TEXT,
-            doi TEXT,
-            journal_ref TEXT,
-            comment TEXT,
-            pdf_url TEXT,
-            abs_url TEXT,
-            source_url TEXT,
-            ingest_date TEXT,
-            local_path TEXT
-        )
-    """)
-    conn.commit()
-    return conn
-
-
-def insert_paper(conn: sqlite3.Connection, paper: dict, local_path: str, ingest_date: str):
-    """Insert paper into database."""
-    conn.execute("""
-        INSERT OR REPLACE INTO papers 
-        (arxiv_id, title, abstract, authors, primary_category, categories, 
-         published, updated, doi, journal_ref, comment, pdf_url, abs_url, 
-         source_url, ingest_date, local_path)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        paper["arxiv_id"],
-        paper["title"],
-        paper["abstract"],
-        json.dumps(paper["authors"]),
-        paper["primary_category"],
-        json.dumps(paper["categories"]),
-        paper["published"],
-        paper["updated"],
-        paper.get("doi", ""),
-        paper.get("journal_ref", ""),
-        paper.get("comment", ""),
-        paper["pdf_url"],
-        paper["abs_url"],
-        paper["source_url"],
-        ingest_date,
-        local_path,
-    ))
+def upsert_paper(conn: sqlite3.Connection, paper: dict, text_extracted: bool) -> tuple[str, bool]:
+    """
+    Insert or update paper in database.
+    
+    Returns (action, needs_reextract) where:
+      - action is "inserted", "updated", or "unchanged"
+      - needs_reextract is True if this is a version update
+    """
+    cursor = conn.cursor()
+    
+    # Check if paper exists
+    cursor.execute(
+        "SELECT id, version, text_extracted FROM papers WHERE paper_source = ? AND paper_id = ?",
+        (paper["paper_source"], paper["paper_id"])
+    )
+    existing = cursor.fetchone()
+    
+    if existing is None:
+        # New paper - insert
+        cursor.execute("""
+            INSERT INTO papers (
+                paper_source, paper_id, announced_date,
+                title, abstract, authors,
+                primary_category, categories,
+                version, submitted_date, updated_date,
+                arxiv_url, pdf_url, doi,
+                text_extracted
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            paper["paper_source"],
+            paper["paper_id"],
+            paper["announced_date"],
+            paper["title"],
+            paper["abstract"],
+            paper["authors"],
+            paper["primary_category"],
+            paper["categories"],
+            paper["version"],
+            paper["submitted_date"],
+            paper["updated_date"],
+            paper["arxiv_url"],
+            paper["pdf_url"],
+            paper["doi"],
+            1 if text_extracted else 0,
+        ))
+        return "inserted", False
+    
+    else:
+        existing_id, existing_version, existing_text = existing
+        
+        # Check if this is a newer version
+        if paper["version"] > existing_version:
+            # Version update - update metadata, keep embedding_idx
+            # Note: We intentionally do NOT clear embedding_idx here.
+            # The paper's semantic fingerprint rarely changes significantly between versions.
+            cursor.execute("""
+                UPDATE papers SET
+                    title = ?,
+                    abstract = ?,
+                    authors = ?,
+                    categories = ?,
+                    version = ?,
+                    updated_date = ?,
+                    doi = COALESCE(?, doi),
+                    text_extracted = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (
+                paper["title"],
+                paper["abstract"],
+                paper["authors"],
+                paper["categories"],
+                paper["version"],
+                paper["announced_date"],  # updated_date = when we saw the new version
+                paper["doi"],
+                1 if text_extracted else existing_text,
+                existing_id,
+            ))
+            return "updated", True  # needs_reextract = True for version updates
+        
+        else:
+            # Same or older version - no update needed
+            return "unchanged", False
 
 
 def main():
     parser = argparse.ArgumentParser(description="Ingest arXiv papers from RSS feeds")
     parser.add_argument("--date", help="Date label for storage (YYYY-MM-DD). Default: today")
-    parser.add_argument("--config", default="config.yaml", help="Config file path")
-    parser.add_argument("--no-pdf", action="store_true", help="Skip PDF download")
-    parser.add_argument("--no-source", action="store_true", help="Skip source download")
-    parser.add_argument("--extract-text", action="store_true", help="Extract text from PDFs and save as .txt (deletes PDFs to save space)")
+    parser.add_argument("--config", help="Config file path")
+    parser.add_argument("--extract-text", action="store_true", help="Extract text from PDFs")
     parser.add_argument("--categories", help="Comma-separated list of categories (overrides config)")
     parser.add_argument("--tier", type=int, choices=[1, 2, 3], help="Only fetch specific tier")
+    parser.add_argument("--dry-run", action="store_true", help="Fetch but don't save")
     args = parser.parse_args()
     
     # Determine date
-    if args.date:
-        date_dir = args.date
-    else:
-        date_dir = datetime.now().strftime("%Y-%m-%d")
+    announced_date = args.date or datetime.now().strftime("%Y-%m-%d")
     
-    console.print(f"[bold green]arXiv RSS Ingestion for {date_dir}[/bold green]")
+    console.print(f"[bold green]arXiv RSS Ingestion for {announced_date}[/bold green]")
     
     # Load config
     config = load_config(args.config)
@@ -376,16 +401,8 @@ def main():
     
     console.print(f"Categories: {len(categories)} total")
     
-    # Setup paths
-    project_root = Path(__file__).parent.parent
-    raw_dir = project_root / "data" / "arxiv" / "raw" / date_dir
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    
-    db_path = project_root / "data" / "index" / "papers.db"
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    
     # Fetch papers
-    papers = fetch_all_papers(categories)
+    papers = fetch_all_papers(categories, announced_date)
     
     console.print(f"\n[bold]Total unique papers: {len(papers)}[/bold]")
     
@@ -393,46 +410,73 @@ def main():
         console.print("[yellow]No papers found.[/yellow]")
         return
     
-    # Initialize database
-    conn = init_database(db_path)
+    if args.dry_run:
+        console.print("[yellow]Dry run - not saving.[/yellow]")
+        return
     
-    # Save papers
-    storage_config = config.get("storage", {})
-    extract_text = args.extract_text or storage_config.get("extract_text", False)
-    download_pdf = storage_config.get("download_pdf", True) and not args.no_pdf and not extract_text
-    download_source = storage_config.get("download_source", True) and not args.no_source
-    max_source_mb = storage_config.get("max_source_size_mb", 200)
+    # Get database connection
+    conn = get_db_connection()
+    
+    # Process papers
+    stats = {"inserted": 0, "updated": 0, "unchanged": 0, "text_extracted": 0}
+    
+    extract_text = args.extract_text or config.get("storage", {}).get("extract_text", False)
     
     if extract_text:
-        console.print("[cyan]Text extraction mode: PDFs will be converted to .txt[/cyan]")
+        console.print("[cyan]Text extraction enabled[/cyan]")
     
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
-        task = progress.add_task("Saving papers...", total=len(papers))
+        task = progress.add_task("Processing papers...", total=len(papers))
         
-        for i, paper in enumerate(papers):
-            progress.update(task, description=f"Saving {paper['arxiv_id']} ({i+1}/{len(papers)})")
+        for paper in papers:
+            progress.update(task, description=f"Processing {paper['paper_id']}")
             
-            paper_dir = save_paper(
-                paper, 
-                raw_dir, 
-                download_pdf=download_pdf,
-                download_source=download_source,
-                extract_text=extract_text,
-                max_source_mb=max_source_mb
-            )
+            text_extracted = False
             
-            insert_paper(conn, paper, str(paper_dir), date_dir)
+            if extract_text:
+                text_path = get_text_path(paper)
+                
+                # Check if we need to extract (new paper or version update)
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT version FROM papers WHERE paper_source = ? AND paper_id = ?",
+                    (paper["paper_source"], paper["paper_id"])
+                )
+                existing = cursor.fetchone()
+                
+                needs_extract = (
+                    existing is None or  # New paper
+                    paper["version"] > existing[0] or  # Version update
+                    not text_path.exists()  # Text file missing
+                )
+                
+                if needs_extract:
+                    if download_and_extract_text(paper):
+                        text_extracted = True
+                        stats["text_extracted"] += 1
+                    time.sleep(0.5)  # Rate limit
+                else:
+                    text_extracted = text_path.exists()
+            
+            # Upsert to database
+            action, _ = upsert_paper(conn, paper, text_extracted)
+            stats[action] += 1
+            
             progress.advance(task)
     
     conn.commit()
     conn.close()
     
-    console.print(f"\n[bold green]✓ Ingested {len(papers)} papers to {raw_dir}[/bold green]")
-    console.print(f"[bold green]✓ Database updated at {db_path}[/bold green]")
+    console.print(f"\n[bold green]✓ Ingestion complete[/bold green]")
+    console.print(f"  Inserted: {stats['inserted']}")
+    console.print(f"  Updated: {stats['updated']}")
+    console.print(f"  Unchanged: {stats['unchanged']}")
+    if extract_text:
+        console.print(f"  Text extracted: {stats['text_extracted']}")
 
 
 if __name__ == "__main__":

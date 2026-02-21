@@ -3,8 +3,8 @@
 Daily pipeline runner.
 
 Runs the full pipeline:
-1. Ingest papers from arXiv
-2. Enrich metadata via APIs
+1. Ingest papers from arXiv (with text extraction)
+2. Enrich metadata via APIs (citations)
 3. Filter into streams
 4. Generate report
 
@@ -41,22 +41,20 @@ def run_step(script: str, args: list, step_name: str) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description="Run daily brief pipeline")
-    parser.add_argument("--date", help="Date to process (YYYY-MM-DD). Default: yesterday")
+    parser.add_argument("--date", help="Date to process (YYYY-MM-DD). Default: today")
     parser.add_argument("--skip-ingest", action="store_true", help="Skip ingestion step")
     parser.add_argument("--skip-enrich", action="store_true", help="Skip enrichment step")
     parser.add_argument("--skip-filter", action="store_true", help="Skip filtering step")
     parser.add_argument("--skip-report", action="store_true", help="Skip report generation")
-    parser.add_argument("--no-pdf", action="store_true", help="Skip PDF downloads")
-    parser.add_argument("--no-source", action="store_true", help="Skip source downloads")
-    parser.add_argument("--overlap", action="store_true", help="Include previous day for safety")
+    parser.add_argument("--no-text", action="store_true", help="Skip text extraction")
+    parser.add_argument("--tier", type=int, choices=[1, 2, 3], help="Only process specific tier")
     args = parser.parse_args()
     
     # Determine date
     if args.date:
         target_date = args.date
     else:
-        yesterday = datetime.now() - timedelta(days=1)
-        target_date = yesterday.strftime("%Y-%m-%d")
+        target_date = datetime.now().strftime("%Y-%m-%d")
     
     console.print(f"[bold magenta]Daily Brief Pipeline for {target_date}[/bold magenta]")
     
@@ -65,12 +63,10 @@ def main():
     # Step 1: Ingest
     if not args.skip_ingest:
         ingest_args = ["--date", target_date]
-        if args.no_pdf:
-            ingest_args.append("--no-pdf")
-        if args.no_source:
-            ingest_args.append("--no-source")
-        if args.overlap:
-            ingest_args.append("--overlap")
+        if not args.no_text:
+            ingest_args.append("--extract-text")
+        if args.tier:
+            ingest_args.extend(["--tier", str(args.tier)])
         
         if not run_step(str(scripts_dir / "ingest.py"), ingest_args, "Ingestion"):
             return 1

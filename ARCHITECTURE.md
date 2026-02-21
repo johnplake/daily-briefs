@@ -1,0 +1,306 @@
+# Daily Briefs Architecture
+
+## Overview
+
+SQLite-centric architecture for arXiv paper curation. The database is the single source of truth for all metadata; files are used only for large blobs (extracted text) and binary indexes (FAISS embeddings).
+
+---
+
+## File Structure
+
+```
+data/
+├── papers.db                              # SQLite - single source of truth
+├── arxiv/                                 # Text files organized by source
+│   └── {announced_date}/                  # e.g., 2026-02-21
+│       └── {paper_id}/                    # e.g., 2502.12345
+│           └── paper.txt                  # extracted text (~75KB each)
+└── embeddings/
+    └── faiss.index                        # FAISS vectors (positions match embedding_idx)
+```
+
+### Path ↔ DB Mapping
+
+| Path component | DB column | Example | Notes |
+|----------------|-----------|---------|-------|
+| `arxiv` | `paper_source` | `"arxiv"` | Original source (never changes) |
+| `2026-02-21` | `announced_date` | `2026-02-21` | When first announced |
+| `2502.12345` | `paper_id` | `"2502.12345"` | Original ID |
+
+**Reconstructing path from DB:**
+```python
+text_path = f"data/{row.paper_source}/{row.announced_date}/{row.paper_id}/paper.txt"
+```
+
+Note: `paper_source` is the *original* source where we discovered the paper. If a paper later gets published at a conference, `published_venue` tracks that, but the path remains based on the original source.
+
+---
+
+## SQLite Schema
+
+```sql
+CREATE TABLE papers (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+    -- Identity (these match the file path components)
+    -- paper_source is the ORIGINAL source where we first discovered the paper.
+    -- It determines the file path and never changes, even if the paper is
+    -- later published at a conference.
+    paper_source     TEXT NOT NULL,           -- "arxiv" (matches folder, never changes)
+    paper_id         TEXT NOT NULL,           -- "2502.12345" (matches folder)
+    announced_date   DATE NOT NULL,           -- "2026-02-21" (matches folder)
+    
+    -- Metadata
+    title            TEXT NOT NULL,
+    abstract         TEXT,
+    authors          TEXT,                    -- JSON array: ["Alice Smith", "Bob Jones"]
+    
+    -- Categories
+    primary_category TEXT,                    -- "cs.AI"
+    categories       TEXT,                    -- "cs.AI cs.CL cs.LG"
+    
+    -- Versioning
+    version          INTEGER DEFAULT 1,       -- current version number
+    submitted_date   DATE,                    -- original submission date
+    updated_date     DATE,                    -- when current version appeared
+    
+    -- Links
+    arxiv_url        TEXT,
+    pdf_url          TEXT,
+    doi              TEXT,                    -- "10.48550/arXiv.2502.12345"
+    
+    -- Publication (updated when paper is published at a conference)
+    published_venue  TEXT,                    -- "neurips-2026", "acl-2026", etc. (NULL if not published)
+    published_url    TEXT,                    -- link to conference version
+    volume           TEXT,                    -- journal/proceedings volume
+    issue            TEXT,                    -- journal issue
+    pages            TEXT,                    -- page range, e.g., "1-15"
+    
+    -- User-supplied metadata
+    tags             TEXT,                    -- JSON array of user tags: ["important", "to-read"]
+    
+    -- Enrichment (citations)
+    citations_s2     INTEGER,                 -- Semantic Scholar count
+    citations_oa     INTEGER,                 -- OpenAlex count
+    
+    -- Embedding
+    embedding_idx    INTEGER,                 -- FAISS index position (NULL = not embedded)
+    
+    -- Text extraction
+    text_extracted   BOOLEAN DEFAULT 0,       -- 1 if paper.txt exists
+    
+    -- Timestamps
+    ingested_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(paper_source, paper_id)
+);
+
+-- Indexes for common queries
+CREATE INDEX idx_announced ON papers(announced_date);
+CREATE INDEX idx_source ON papers(paper_source);
+CREATE INDEX idx_primary_cat ON papers(primary_category);
+CREATE INDEX idx_embedding ON papers(embedding_idx);
+CREATE INDEX idx_text ON papers(text_extracted);
+CREATE INDEX idx_venue ON papers(published_venue);
+CREATE INDEX idx_doi ON papers(doi);
+
+-- Full-text search (title + abstract only)
+CREATE VIRTUAL TABLE papers_fts USING fts5(
+    paper_id,
+    title,
+    abstract,
+    content='papers',
+    content_rowid='id'
+);
+
+-- Triggers to keep FTS in sync
+CREATE TRIGGER papers_ai AFTER INSERT ON papers BEGIN
+    INSERT INTO papers_fts(rowid, paper_id, title, abstract)
+    VALUES (new.id, new.paper_id, new.title, new.abstract);
+END;
+
+CREATE TRIGGER papers_ad AFTER DELETE ON papers BEGIN
+    INSERT INTO papers_fts(papers_fts, rowid, paper_id, title, abstract)
+    VALUES ('delete', old.id, old.paper_id, old.title, old.abstract);
+END;
+
+CREATE TRIGGER papers_au AFTER UPDATE ON papers BEGIN
+    INSERT INTO papers_fts(papers_fts, rowid, paper_id, title, abstract)
+    VALUES ('delete', old.id, old.paper_id, old.title, old.abstract);
+    INSERT INTO papers_fts(rowid, paper_id, title, abstract)
+    VALUES (new.id, new.paper_id, new.title, new.abstract);
+END;
+```
+
+**Full-text search usage:**
+```sql
+-- Simple search
+SELECT p.* FROM papers p
+JOIN papers_fts fts ON p.id = fts.rowid
+WHERE papers_fts MATCH 'transformer attention';
+
+-- Ranked by relevance
+SELECT p.*, bm25(papers_fts) as score FROM papers p
+JOIN papers_fts fts ON p.id = fts.rowid
+WHERE papers_fts MATCH 'language model'
+ORDER BY score;
+```
+
+---
+
+## Version Update Behavior
+
+When a newer version of a paper appears in RSS:
+
+```sql
+ON CONFLICT(paper_source, paper_id) DO UPDATE SET
+    title = excluded.title,
+    abstract = excluded.abstract,
+    authors = excluded.authors,
+    version = excluded.version,
+    updated_date = excluded.updated_date,
+    updated_at = CURRENT_TIMESTAMP
+    -- embedding_idx NOT cleared (intentional)
+```
+
+**Then:**
+- Re-download PDF, re-extract text, overwrite `paper.txt`
+- Embedding kept as-is
+
+**Rationale:** A paper's semantic fingerprint (what it's about) rarely changes significantly between versions. Re-embedding thousands of papers for minor revisions isn't worth the compute. The text file, however, should always reflect the latest version since users read and query it directly.
+
+---
+
+## Conference Publication Behavior
+
+When a paper originally discovered on arXiv gets published at a conference (e.g., NeurIPS, ACL):
+
+**What changes:**
+- `published_venue` ← "neurips-2026"
+- `published_url` ← link to conference page/PDF
+- `updated_at` ← current timestamp
+- Text file overwritten with content extracted from conference PDF
+
+**What stays the same:**
+- `paper_source` ← stays "arxiv" (original source)
+- `paper_id` ← stays "2502.12345" (original ID)
+- `announced_date` ← stays unchanged
+- File path ← stays `data/arxiv/2026-02-21/2502.12345/paper.txt`
+- `embedding_idx` ← stays unchanged (no re-embedding needed)
+
+**Rationale:** The paper's identity in our system is based on where we first discovered it (typically arXiv). The file path is derived from this stable identity and never changes. When the conference version appears, we update the text to the polished conference PDF and record the venue, but the paper doesn't move or get re-embedded. This avoids duplication and keeps paths predictable.
+
+---
+
+## Scripts
+
+### `init_db.py` (new)
+- Creates `data/papers.db` with schema above
+- Idempotent (safe to run multiple times)
+
+### `ingest.py`
+- Fetches RSS feeds for configured categories
+- For each paper:
+  - INSERT into `papers` table
+  - ON CONFLICT: UPDATE metadata, version, updated_date
+  - If `--extract-text`: download PDF, extract text, save to path, set `text_extracted=1`
+- Text always re-extracted on version update (overwrite file)
+- Embedding NOT cleared on version update
+
+### `enrich.py`
+- Queries DB for papers needing citation data
+- Fetches from Semantic Scholar + OpenAlex APIs
+- Updates `citations_s2`, `citations_oa` columns directly
+- No separate files
+
+### `embed.py`
+- Queries DB: `WHERE text_extracted=1 AND embedding_idx IS NULL`
+- Generates SPECTER embeddings from abstract (or text)
+- Appends vectors to FAISS index
+- Updates `embedding_idx` column with position
+- No `paper_ids.json` needed
+
+### `search.py`
+- Takes query text, generates embedding
+- Searches FAISS index, gets positions
+- Queries DB: `WHERE embedding_idx IN (pos1, pos2, ...)`
+- Returns full paper metadata
+
+### `filter.py`
+- Queries DB for papers by date range, categories, etc.
+- Applies scoring (citations, interest model)
+- Outputs filtered list for reporting
+
+### `report.py`
+- Takes filtered papers
+- Generates markdown report with GitHub issue links
+- Queries DB for full metadata as needed
+
+### `migrate.py` (one-time)
+- Reads existing `data/arxiv/raw/YYYY-MM-DD/<id>/metadata.json` files
+- Inserts into new DB schema
+- Moves `paper.txt` to new location
+- Imports existing `paper_ids.json` → sets `embedding_idx` values
+- Cleans up old structure after verification
+
+---
+
+## Embedding ↔ DB Relationship
+
+- FAISS index is append-only; positions are stable
+- `embedding_idx` = position in FAISS index (0, 1, 2, ...)
+- Search flow: query → FAISS returns positions → `SELECT * FROM papers WHERE embedding_idx IN (...)`
+- New papers get the next available position
+
+---
+
+## Extensibility
+
+The schema is easy to extend:
+
+**Adding scalar or text data (e.g., new citation sources):**
+```sql
+ALTER TABLE papers ADD COLUMN citations_scite INTEGER;
+ALTER TABLE papers ADD COLUMN scite_supporting TEXT;
+```
+
+**Adding relational data (e.g., paper similarity graphs):**
+```sql
+CREATE TABLE paper_relations (
+    source_id    TEXT NOT NULL,
+    target_id    TEXT NOT NULL,
+    relation     TEXT NOT NULL,   -- "cites", "similar", etc.
+    source_tool  TEXT,            -- "connected_papers", "litmaps"
+    weight       REAL,
+    UNIQUE(source_id, target_id, relation, source_tool)
+);
+```
+
+No migration complexity. SQLite handles schema evolution gracefully.
+
+---
+
+## Migration Plan
+
+1. Run `init_db.py` to create new schema
+2. Run `migrate.py`:
+   - Parse all existing `metadata.json` → INSERT into DB
+   - Move `paper.txt` files to new paths
+   - Map `paper_ids.json` positions to `embedding_idx`
+3. Verify: row counts, spot-check paths
+4. Delete old `data/arxiv/raw/` structure
+5. Delete `data/embeddings/paper_ids.json`
+
+---
+
+## Summary: Before vs After
+
+| Before | After |
+|--------|-------|
+| `metadata.json` per paper | SQLite `papers` table |
+| `citations.json` per paper | `citations_s2`, `citations_oa` columns |
+| `paper_ids.json` for FAISS mapping | `embedding_idx` column |
+| `data/arxiv/raw/{date}/{id}/` | `data/arxiv/{date}/{id}/paper.txt` |
+| Query = scan JSON files | Query = SQL |
+| No full-text search | FTS5 on title + abstract |

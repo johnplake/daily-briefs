@@ -17,17 +17,21 @@ from pathlib import Path
 from urllib.parse import quote
 
 import yaml
-from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 
 console = Console()
+
+# Project paths
+PROJECT_ROOT = Path(__file__).parent.parent
 
 # GitHub repo for feedback issues
 GITHUB_REPO = "johnplake/daily-briefs"
 
 
-def load_config(config_path: str = "config.yaml") -> dict:
+def load_config(config_path: str = None) -> dict:
     """Load configuration from YAML file."""
+    if config_path is None:
+        config_path = PROJECT_ROOT / "config.yaml"
     with open(config_path) as f:
         return yaml.safe_load(f)
 
@@ -41,13 +45,11 @@ def load_filtered_results(results_path: Path) -> dict:
 def generate_tldr(paper: dict) -> str:
     """
     Generate a TLDR for a paper.
-    
     For MVP: Extract first 2 sentences of abstract.
     Future: Use LLM for proper summarization.
     """
-    abstract = paper.get("abstract", "")
+    abstract = paper.get("abstract", "") or ""
     
-    # Simple sentence splitting
     sentences = abstract.replace("\n", " ").split(". ")
     
     if len(sentences) >= 2:
@@ -59,9 +61,7 @@ def generate_tldr(paper: dict) -> str:
 
 
 def generate_selection_reason(paper: dict) -> str:
-    """
-    Generate explanation for why paper was selected.
-    """
+    """Generate explanation for why paper was selected."""
     reasons = []
     
     keyword_score = paper.get("keyword_score", 0)
@@ -87,18 +87,13 @@ def generate_selection_reason(paper: dict) -> str:
 
 
 def generate_feedback_url(paper: dict, stream: str, date: str) -> str:
-    """
-    Generate GitHub Issue URL for feedback.
+    """Generate GitHub Issue URL for feedback."""
+    paper_id = paper.get("paper_id", "unknown")
+    title = (paper.get("title", "Unknown") or "Unknown")[:80]
     
-    Pre-fills the issue template with paper info.
-    """
-    arxiv_id = paper.get("arxiv_id", "unknown")
-    title = paper.get("title", "Unknown")[:80]  # Truncate for URL
+    issue_title = quote(f"[Feedback] {paper_id}")
     
-    # Build issue title and body
-    issue_title = quote(f"[Feedback] {arxiv_id}")
-    
-    body = f"""**arXiv ID:** {arxiv_id}
+    body = f"""**Paper ID:** {paper_id}
 **Title:** {title}
 **Date:** {date}
 **Stream:** {stream}
@@ -132,13 +127,9 @@ def format_authors(authors: list, max_authors: int = 3) -> str:
 
 
 def generate_report(results: dict, date: str, config: dict) -> str:
-    """
-    Generate markdown report from filtered results.
-    """
+    """Generate markdown report from filtered results."""
     report_config = config.get("report", {})
     max_per_stream = report_config.get("max_papers_per_stream", 10)
-    include_abstract = report_config.get("include_abstract_preview", True)
-    abstract_length = report_config.get("abstract_preview_length", 300)
     
     lines = []
     
@@ -178,19 +169,19 @@ def generate_report(results: dict, date: str, config: dict) -> str:
         lines.append("")
         
         for i, paper in enumerate(papers, 1):
-            arxiv_id = paper.get("arxiv_id", "unknown")
-            title = paper.get("title", "Unknown")
+            paper_id = paper.get("paper_id", "unknown")
+            title = paper.get("title", "Unknown") or "Unknown"
             authors = format_authors(paper.get("authors", []))
-            abs_url = paper.get("abs_url", f"https://arxiv.org/abs/{arxiv_id}")
-            pdf_url = paper.get("pdf_url", f"https://arxiv.org/pdf/{arxiv_id}.pdf")
+            arxiv_url = paper.get("arxiv_url", f"https://arxiv.org/abs/{paper_id}")
+            pdf_url = f"https://arxiv.org/pdf/{paper_id}.pdf"
             
             tldr = generate_tldr(paper)
             reason = generate_selection_reason(paper)
             feedback_url = generate_feedback_url(paper, stream_key.capitalize(), date)
             
-            lines.append(f"### {i}. [{title}]({abs_url})")
+            lines.append(f"### {i}. [{title}]({arxiv_url})")
             lines.append("")
-            lines.append(f"**{arxiv_id}** | {authors}")
+            lines.append(f"**{paper_id}** | {authors}")
             lines.append("")
             lines.append(f"> {tldr}")
             lines.append("")
@@ -216,12 +207,12 @@ def generate_report(results: dict, date: str, config: dict) -> str:
         lines.append("")
         
         for paper in near_misses:
-            arxiv_id = paper.get("arxiv_id", "unknown")
-            title = paper.get("title", "Unknown")
-            abs_url = paper.get("abs_url", f"https://arxiv.org/abs/{arxiv_id}")
+            paper_id = paper.get("paper_id", "unknown")
+            title = paper.get("title", "Unknown") or "Unknown"
+            arxiv_url = paper.get("arxiv_url", f"https://arxiv.org/abs/{paper_id}")
             feedback_url = generate_feedback_url(paper, "Near-miss", date)
             
-            lines.append(f"- [{title}]({abs_url}) ([Feedback]({feedback_url}))")
+            lines.append(f"- [{title}]({arxiv_url}) ([Feedback]({feedback_url}))")
         
         lines.append("")
     
@@ -234,12 +225,12 @@ def generate_report(results: dict, date: str, config: dict) -> str:
         lines.append("")
         
         for paper in random_negatives:
-            arxiv_id = paper.get("arxiv_id", "unknown")
-            title = paper.get("title", "Unknown")
-            abs_url = paper.get("abs_url", f"https://arxiv.org/abs/{arxiv_id}")
+            paper_id = paper.get("paper_id", "unknown")
+            title = paper.get("title", "Unknown") or "Unknown"
+            arxiv_url = paper.get("arxiv_url", f"https://arxiv.org/abs/{paper_id}")
             feedback_url = generate_feedback_url(paper, "Random-negative", date)
             
-            lines.append(f"- [{title}]({abs_url}) ([Feedback]({feedback_url}))")
+            lines.append(f"- [{title}]({arxiv_url}) ([Feedback]({feedback_url}))")
         
         lines.append("")
     
@@ -254,34 +245,26 @@ def generate_report(results: dict, date: str, config: dict) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Generate daily report")
     parser.add_argument("--date", required=True, help="Date for report (YYYY-MM-DD)")
-    parser.add_argument("--config", default="config.yaml", help="Config file path")
+    parser.add_argument("--config", help="Config file path")
     parser.add_argument("--input", help="Input filtered JSON (default: data/filtered/YYYY-MM-DD.json)")
     parser.add_argument("--output", help="Output report path (default: reports/YYYY-MM-DD.md)")
     args = parser.parse_args()
     
     console.print(f"[bold green]Generating report for {args.date}[/bold green]")
     
-    # Load config
     config = load_config(args.config)
     
-    # Setup paths
-    project_root = Path(__file__).parent.parent
-    
-    input_path = Path(args.input) if args.input else project_root / "data" / "filtered" / f"{args.date}.json"
-    output_path = Path(args.output) if args.output else project_root / "reports" / f"{args.date}.md"
+    input_path = Path(args.input) if args.input else PROJECT_ROOT / "data" / "filtered" / f"{args.date}.json"
+    output_path = Path(args.output) if args.output else PROJECT_ROOT / "reports" / f"{args.date}.md"
     
     if not input_path.exists():
         console.print(f"[red]Filtered results not found: {input_path}[/red]")
         console.print("[yellow]Run filter.py first.[/yellow]")
         return
     
-    # Load filtered results
     results = load_filtered_results(input_path)
-    
-    # Generate report
     report = generate_report(results, args.date, config)
     
-    # Save
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         f.write(report)
