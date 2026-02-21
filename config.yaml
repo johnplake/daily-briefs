@@ -1,0 +1,133 @@
+# Daily Briefs Configuration
+
+# arXiv category tiers
+categories:
+  tier1:  # Primary focus - high recall
+    - cs.AI
+    - cs.CL
+    - cs.CY
+    - cs.LG
+    - cs.NE
+    - stat.ML
+    
+  tier2:  # Secondary - high precision only
+    - cs.IR
+    - cond-mat.dis-nn
+    - cs.CE
+    - cs.CV
+    - cs.SI
+    - cs.ET
+    - cs.DL
+    - cs.GT
+    - cs.HC
+    - cs.MA
+    - cs.OH
+    - stat.TH
+    - cs.GL
+    - physics.hist-ph
+    - physics.soc-ph
+    - math.DS
+    - math.IT
+    - math.MG
+    - math.OC
+    - math.PR
+    - math.ST
+    
+  tier3:  # Tertiary - archive/download only
+    - cs.RO
+    - cs.PL
+    - cs.SY
+    - q-bio.NC
+    - q-bio.PE
+    - q-bio.OT
+    - q-bio.QM
+    - econ.EM
+    - econ.GN
+    - econ.TH
+    - eess.SY
+    - eess.SP
+    - cond-mat.stat-mech
+    - nlin.AO
+    - nlin.CD
+    - nlin.CG
+
+# Interest profile (keywords, phrases, project contexts)
+interests:
+  keywords:
+    - language model
+    - LLM
+    - transformer
+    - attention mechanism
+    - reasoning
+    - chain of thought
+    - RLHF
+    - alignment
+    - interpretability
+    - mechanistic interpretability
+    - emergent capabilities
+    - scaling laws
+    - in-context learning
+    - prompt engineering
+    - instruction tuning
+    - fine-tuning
+    - knowledge distillation
+    - neural network
+    - deep learning
+    - representation learning
+    - generalization
+    - out-of-distribution
+    - calibration
+    - uncertainty quantification
+    - Bayesian
+    - information theory
+    - complexity
+    - cognitive science
+    - human-AI interaction
+    
+  project_contexts:
+    - V2G validator-to-generator
+    - ranking loss training
+    - LLM calibration
+    - plausibility judgment
+
+# Filtering thresholds
+filtering:
+  # Tier 1: include by default, filter only obvious noise
+  tier1_min_score: 0.1
+  
+  # Tier 2: higher bar
+  tier2_min_score: 0.5
+  
+  # Tier 3: very high bar (only exceptional papers)
+  tier3_min_score: 0.8
+  
+  # Number of serendipity samples per day
+  serendipity_count: 5
+  
+  # Number of near-misses to show for feedback
+  near_miss_count: 3
+  
+  # Number of random negatives for calibration
+  random_negative_count: 2
+
+# Enrichment APIs
+apis:
+  semantic_scholar:
+    enabled: true
+    rate_limit_per_second: 10
+    
+  openlex:
+    enabled: true
+    rate_limit_per_second: 10
+
+# Storage settings
+storage:
+  download_pdf: true
+  download_source: true
+  max_source_size_mb: 200  # Skip sources larger than this
+  
+# Report settings
+report:
+  max_papers_per_stream: 10
+  include_abstract_preview: true
+  abstract_preview_length: 300

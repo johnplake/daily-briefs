@@ -1,0 +1,55 @@
+name: Paper Feedback
+description: Rate a paper from the daily brief
+title: "[Feedback] "
+labels: ["feedback"]
+body:
+  - type: input
+    id: arxiv_id
+    attributes:
+      label: arXiv ID
+      description: The arXiv identifier
+      placeholder: "2402.12345"
+    validations:
+      required: true
+      
+  - type: input
+    id: date
+    attributes:
+      label: Brief Date
+      description: Which daily brief was this from?
+      placeholder: "2026-02-21"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: rating
+    attributes:
+      label: Rating
+      description: Was this paper useful?
+      options:
+        - "👍 Useful - good recommendation"
+        - "🤷 Marginal - somewhat relevant"
+        - "👎 Not useful - poor recommendation"
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: stream
+    attributes:
+      label: Stream
+      description: Which stream was this from?
+      options:
+        - Popular
+        - Interest
+        - Serendipity
+        - Near-miss
+        - Random-negative
+    validations:
+      required: true
+      
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (optional)
+      description: Any additional context about why this was/wasn't useful
+      placeholder: "e.g., Already knew this, too tangential, exactly what I needed..."
