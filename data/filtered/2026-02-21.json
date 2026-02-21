@@ -1,0 +1,1356 @@
+{
+  "popular": [],
+  "interest": [
+    {
+      "arxiv_id": "2602.16802",
+      "title": "References Improve LLM Alignment in Non-Verifiable Domains",
+      "abstract": "While Reinforcement Learning with Verifiable Rewards (RLVR) has shown strong effectiveness in reasoning tasks, it cannot be directly applied to non-verifiable domains lacking ground-truth verifiers, such as LLM alignment. In this work, we investigate whether reference-guided LLM-evaluators can bridge this gap by serving as soft \"verifiers\". First, we design evaluation protocols that enhance LLM-based evaluators for LLM alignment using reference outputs. Through comprehensive experiments, we show that a reference-guided approach substantially improves the accuracy of less capable LLM-judges using references from frontier models; stronger LLM-judges can also be enhanced by high-quality (i.e., human-written) references. Building on these improved judges, we demonstrate the utility of high-quality references in alignment tuning, where LLMs guided with references are used as judges to self-improve. We show that reference-guided self-improvement yields clear gains over both direct SFT on reference outputs and self-improvement with reference-free judges, achieving performance comparable to training with ArmoRM, a strong finetuned reward model. Specifically, our method achieves 73.1% and 58.7% on AlpacaEval and Arena-Hard with Llama-3-8B-Instruct, and 70.0% and 74.1% with Qwen2.5-7B, corresponding to average absolute gains of +20.2 / +17.1 points over SFT distillation and +5.3 / +3.6 points over reference-free self-improvement on AlpacaEval / Arena-Hard. These results highlight the potential of using reference-guided LLM-evaluators to enable effective LLM post-training in non-verifiable domains.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16802",
+      "authors": [
+        "Kejian Shi, Yixin Liu, Peifeng Wang, Alexander R. Fabbri, Shafiq Joty, Arman Cohan"
+      ],
+      "keyword_score": 0.5454545454545454,
+      "popularity_score": 0.0,
+      "combined_score": 0.3272727272727272,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17053",
+      "title": "RFEval: Benchmarking Reasoning Faithfulness under Counterfactual Reasoning Intervention in Large Reasoning Models",
+      "abstract": "Large Reasoning Models (LRMs) exhibit strong performance, yet often produce rationales that sound plausible but fail to reflect their true decision process, undermining reliability and trust. We introduce a formal framework for reasoning faithfulness, defined by two testable conditions: stance consistency (a coherent stance linking reasoning to answer) and causal influence (the stated reasoning causally drives the answer under output-level interventions), explicitly decoupled from accuracy. To operationalize this, we present RFEval, a benchmark of 7,186 instances across seven tasks that probes faithfulness via controlled, output-level counterfactual interventions. Evaluating twelve open-source LRMs, we find unfaithfulness in 49.7% of outputs, predominantly from stance inconsistency. Failures are concentrated in brittle, convergent domains such as math and code, and correlate more with post-training regimes than with scale: within-family ablations indicate that adding current RL-style objectives on top of supervised fine-tuning can reduce reasoning faithfulness, even when accuracy is maintained. Crucially, accuracy is neither a sufficient nor a reliable proxy for faithfulness: once controlling for model and task, the accuracy-faithfulness link is weak and statistically insignificant. Our work establishes a rigorous methodology for auditing LRM reliability and shows that trustworthy AI requires optimizing not only for correct outcomes but also for the structural integrity of the reasoning process. Our code and dataset can be found at project page: $\\href{https://aidaslab.github.io/RFEval/}{https://aidaslab.github.io/RFEval/}$",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17053",
+      "authors": [
+        "Yunseok Han, Yejoon Lee, Jaeyoung Do"
+      ],
+      "keyword_score": 0.48484848484848486,
+      "popularity_score": 0.0,
+      "combined_score": 0.2909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17095",
+      "title": "FLoRG: Federated Fine-tuning with Low-rank Gram Matrices and Procrustes Alignment",
+      "abstract": "Parameter-efficient fine-tuning techniques such as low-rank adaptation (LoRA) enable large language models (LLMs) to adapt to downstream tasks efficiently. Federated learning (FL) further facilitates this process by enabling collaborative fine-tuning across distributed clients without sharing private data. However, the use of two separate low-rank matrices in LoRA for federated fine-tuning introduces two types of challenges. The first challenge arises from the error induced by separately aggregating those two low-rank matrices. The second challenge occurs even when the product of two low-rank matrices is aggregated. The server needs to recover factors via matrix decomposition, which is non-unique and can introduce decomposition drift. To tackle the aforementioned challenges, we propose FLoRG, a federated fine-tuning framework which employs a single low-rank matrix for fine-tuning and aggregates its Gram matrix (i.e., the matrix of inner products of its column vectors), eliminating the aggregation error while also reducing the communication overhead. FLoRG minimizes the decomposition drift by introducing a Procrustes alignment approach which aligns the decomposed matrix between consecutive fine-tuning rounds for consistent updates. We theoretically analyze the convergence of FLoRG and prove that adopting the Procrustes alignment results in a tighter convergence bound. Experimental results across multiple LLM fine-tuning benchmarks demonstrate that FLoRG outperforms five state-of-the-art baseline schemes in the downstream task accuracy and can reduce the communication overhead by up to 2041$\\times$.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17095",
+      "authors": [
+        "Chuiyang Meng, Ming Tang, Vincent W. S. Wong"
+      ],
+      "keyword_score": 0.48484848484848486,
+      "popularity_score": 0.0,
+      "combined_score": 0.2909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17560",
+      "title": "ODESteer: A Unified ODE-Based Steering Framework for LLM Alignment",
+      "abstract": "Activation steering, or representation engineering, offers a lightweight approach to align large language models (LLMs) by manipulating their internal activations at inference time. However, current methods suffer from two key limitations: \\textit{(i)} the lack of a unified theoretical framework for guiding the design of steering directions, and \\textit{(ii)} an over-reliance on \\textit{one-step steering} that fail to capture complex patterns of activation distributions. In this work, we propose a unified ordinary differential equations (ODEs)-based \\textit{theoretical} framework for activation steering in LLM alignment. We show that conventional activation addition can be interpreted as a first-order approximation to the solution of an ODE. Based on this ODE perspective, identifying a steering direction becomes equivalent to designing a \\textit{barrier function} from control theory. Derived from this framework, we introduce ODESteer, a kind of ODE-based steering guided by barrier functions, which shows \\textit{empirical} advancement in LLM alignment. ODESteer identifies steering directions by defining the barrier function as the log-density ratio between positive and negative activations, and employs it to construct an ODE for \\textit{multi-step and adaptive} steering. Compared to state-of-the-art activation steering methods, ODESteer achieves consistent empirical improvements on diverse LLM alignment benchmarks, a notable $5.7\\%$ improvement over TruthfulQA, $2.5\\%$ over UltraFeedback, and $2.4\\%$ over RealToxicityPrompts. Our work establishes a principled new view of activation steering in LLM alignment by unifying its theoretical foundations via ODEs, and validating it empirically through the proposed ODESteer method.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17560",
+      "authors": [
+        "Hongjue Zhao, Haosen Sun, Jiangtao Kong, Xiaochang Li, Qineng Wang, Liwei Jiang, Qi Zhu, Tarek Abdelzaher, Yejin Choi, Manling Li, Huajie Shao"
+      ],
+      "keyword_score": 0.42424242424242425,
+      "popularity_score": 0.0,
+      "combined_score": 0.2545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16902",
+      "title": "LLM-WikiRace: Benchmarking Long-term Planning and Reasoning over Real-World Knowledge Graphs",
+      "abstract": "We introduce LLM-Wikirace, a benchmark for evaluating planning, reasoning, and world knowledge in large language models (LLMs). In LLM-Wikirace, models must efficiently navigate Wikipedia hyperlinks step by step to reach a target page from a given source, requiring look-ahead planning and the ability to reason about how concepts are connected in the real world. We evaluate a broad set of open- and closed-source models, including Gemini-3, GPT-5, and Claude Opus 4.5, which achieve the strongest results on the easy level of the task and demonstrate superhuman performance. Despite this, performance drops sharply on hard difficulty: the best-performing model, Gemini-3, succeeds in only 23\\% of hard games, highlighting substantial remaining challenges for frontier models. Our analysis shows that world knowledge is a necessary ingredient for success, but only up to a point, beyond this threshold, planning and long-horizon reasoning capabilities become the dominant factors. Trajectory-level analysis further reveals that even the strongest models struggle to replan after failure, frequently entering loops rather than recovering. LLM-Wikirace is a simple benchmark that reveals clear limitations in current reasoning systems, offering an open arena where planning-capable LLMs still have much to prove. Our code and leaderboard available at https:/llmwikirace.github.io.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16902",
+      "authors": [
+        "Juliusz Ziomek, William Bankes, Lorenz Wolf, Shyam Sundhar Ramesh, Xiaohang Tang, Ilija Bogunovic"
+      ],
+      "keyword_score": 0.36363636363636365,
+      "popularity_score": 0.0,
+      "combined_score": 0.21818181818181817,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16931",
+      "title": "Narrow fine-tuning erodes safety alignment in vision-language agents",
+      "abstract": "Lifelong multimodal agents must continuously adapt to new tasks through post-training, but this creates fundamental tension between acquiring capabilities and preserving safety alignment. We demonstrate that fine-tuning aligned vision-language models on narrow-domain harmful datasets induces severe emergent misalignment that generalizes broadly across unrelated tasks and modalities. Through experiments on Gemma3-4B, we show that misalignment scales monotonically with LoRA rank, and that multimodal evaluation reveals substantially higher misalignment ($70.71 \\pm 1.22$ at $r=128$) than text-only evaluation ($41.19 \\pm 2.51$), suggesting that unimodal safety benchmarks may underestimate alignment degradation in vision-language models. Critically, even 10\\% harmful data in the training mixture induces substantial alignment degradation. Geometric analysis reveals that harmful behaviors occupy a remarkably low-dimensional subspace, with the majority of misalignment information captured in 10 principal components. To mitigate misalignment, we evaluate two strategies: benign narrow fine-tuning and activation-based steering. While both approaches substantially reduce misalignment, neither completely removes the learned harmful behaviors. Our findings highlight the need for robust continual learning frameworks, as current post-training paradigms may not sufficiently preserve alignment in post-deployment settings.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16931",
+      "authors": [
+        "Idhant Gulati, Shivam Raval"
+      ],
+      "keyword_score": 0.36363636363636365,
+      "popularity_score": 0.0,
+      "combined_score": 0.21818181818181817,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16977",
+      "title": "Fail-Closed Alignment for Large Language Models",
+      "abstract": "We identify a structural weakness in current large language model (LLM) alignment: modern refusal mechanisms are fail-open. While existing approaches encode refusal behaviors across multiple latent features, suppressing a single dominant feature$-$via prompt-based jailbreaks$-$can cause alignment to collapse, leading to unsafe generation. Motivated by this, we propose fail-closed alignment as a design principle for robust LLM safety: refusal mechanisms should remain effective even under partial failures via redundant, independent causal pathways. We present a concrete instantiation of this principle: a progressive alignment framework that iteratively identifies and ablates previously learned refusal directions, forcing the model to reconstruct safety along new, independent subspaces. Across four jailbreak attacks, we achieve the strongest overall robustness while mitigating over-refusal and preserving generation quality, with small computational overhead. Our mechanistic analyses confirm that models trained with our method encode multiple, causally independent refusal directions that prompt-based jailbreaks cannot suppress simultaneously, providing empirical support for fail-closed alignment as a principled foundation for robust LLM safety.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CR"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16977",
+      "authors": [
+        "Zachary Coalson, Beth Sohler, Aiden Gabriel, Sanghyun Hong"
+      ],
+      "keyword_score": 0.36363636363636365,
+      "popularity_score": 0.0,
+      "combined_score": 0.21818181818181817,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2511.17673",
+      "title": "Bridging Symbolic Control and Neural Reasoning in LLM Agents: Structured Cognitive Loop with a Governance Layer",
+      "abstract": "Large language model agents suffer from fundamental architectural problems: entangled reasoning and execution, memory volatility, and uncontrolled action sequences. We introduce Structured Cognitive Loop (SCL), a modular architecture that explicitly separates agent cognition into five phases: Retrieval, Cognition, Control, Action, and Memory (R-CCAM). Soft Symbolic Control constitutes a dedicated governance layer within SCL, applying symbolic constraints to probabilistic inference while preserving the flexibility of neural reasoning and restoring the explainability and controllability of classical symbolic systems. Through empirical validation on multi-step conditional reasoning tasks, we demonstrate that SCL achieves zero policy violations, eliminates redundant tool calls, and maintains complete decision traceability. These results address critical gaps in existing frameworks such as ReAct, AutoGPT, and memory-augmented approaches. Our contributions are threefold: (1) we situate SCL within the taxonomy of hybrid intelligence, differentiating it from prompt-centric and memory-only approaches; (2) we formally define Soft Symbolic Control and contrast it with neuro-symbolic AI; and (3) we derive three design principles for trustworthy agents: modular decomposition, adaptive symbolic governance, and transparent state management. We provide a complete open-source implementation demonstrating the R-CCAM loop architecture, alongside a live GPT-4o-powered travel planning agent. By connecting expert system principles with modern LLM capabilities, this work offers a practical and theoretically grounded path toward reliable, explainable, and governable AI agents.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2511.17673",
+      "authors": [
+        "Myung Ho Kim"
+      ],
+      "keyword_score": 0.3333333333333333,
+      "popularity_score": 0.0,
+      "combined_score": 0.19999999999999998,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2505.17508",
+      "title": "On the Design of KL-Regularized Policy Gradient Algorithms for LLM Reasoning",
+      "abstract": "Policy gradient algorithms have been successfully applied to enhance the reasoning capabilities of large language models (LLMs). KL regularization is ubiquitous, yet the design surface, choice of KL direction (forward vs. reverse), normalization (normalized vs. unnormalized), and estimator ($k_1/k_2/k_3$), is scattered across the literature and often intertwined with off-policy estimation. We ask a focused question: under the off-policy setting, what weighting is required for each KL variant so that the surrogate we optimize yields the exact gradient of the intended KL-regularized objective? We answer this with a compact, unified derivation we call the Regularized Policy Gradient (RPG) view. RPG (i) unifies normalized and unnormalized KL variants and shows that the widely-used $k_3$ penalty is exactly the unnormalized KL; (ii) specifies conditions under which REINFORCE-style losses with stop-gradient are gradient-equivalent to fully differentiable surrogates; (iii) identifies and corrects an off-policy importance-weighting mismatch in GRPO's KL term; and (iv) introduces RPG-Style Clip, a clipped-importance-sampling step within RPG-REINFORCE that enables stable, off-policy policy-gradient training at scale. On mathematical reasoning benchmarks (AIME24, AIME25), RPG-REINFORCE with RPG-Style Clip improves accuracy by up to $+6$ absolute percentage points over DAPO. We extend our experiments to 8K context length, and RPG-REINFORCE with RPG-Style Clip achieves 52% accuracy on AIME25, surpassing the official Qwen3-4B-Instruct model (47%). Notably, RPG is a stable and scalable RL algorithm for LLM reasoning, realized via (a) a KL-correct objective, (b) clipped importance sampling, and (c) an iterative reference-policy update scheme. Project Page: https://github.com/complex-reasoning/RPG.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG",
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2505.17508",
+      "authors": [
+        "Yifan Zhang, Yifeng Liu, Huizhuo Yuan, Yang Yuan, Quanquan Gu, Andrew Chi-Chih Yao"
+      ],
+      "keyword_score": 0.3333333333333333,
+      "popularity_score": 0.0,
+      "combined_score": 0.19999999999999998,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.15868",
+      "title": "Understanding LLM Failures: A Multi-Tape Turing Machine Analysis of Systematic Errors in Language Model Reasoning",
+      "abstract": "Large language models (LLMs) exhibit failure modes on seemingly trivial tasks. We propose a formalisation of LLM interaction using a deterministic multi-tape Turing machine, where each tape represents a distinct component: input characters, tokens, vocabulary, model parameters, activations, probability distributions, and output text. The model enables precise localisation of failure modes to specific pipeline stages, revealing, e.g., how tokenisation obscures character-level structure needed for counting tasks. The model clarifies why techniques like chain-of-thought prompting help, by externalising computation on the output tape, while also revealing their fundamental limitations. This approach provides a rigorous, falsifiable alternative to geometric metaphors and complements empirical scaling laws with principled error analysis.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.15868",
+      "authors": [
+        "Magnus Boman"
+      ],
+      "keyword_score": 0.3333333333333333,
+      "popularity_score": 0.0,
+      "combined_score": 0.19999999999999998,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16835",
+      "title": "NeST: Neuron Selective Tuning for LLM Safety",
+      "abstract": "Safety alignment is essential for the responsible deployment of large language models (LLMs). Yet, existing approaches often rely on heavyweight fine-tuning that is costly to update, audit, and maintain across model families. Full fine-tuning incurs substantial computational and storage overhead, while parameter-efficient methods such as LoRA trade efficiency for inconsistent safety gains and sensitivity to design choices. Safety intervention mechanisms such as circuit breakers reduce unsafe outputs without modifying model weights, but do not directly shape or preserve the internal representations that govern safety behavior. These limitations hinder rapid and reliable safety updates, particularly in settings where models evolve frequently or must adapt to new policies and domains.   We present NeST, a lightweight, structure-aware safety alignment framework that strengthens refusal behavior by selectively adapting a small subset of safety-relevant neurons while freezing the remainder of the model. NeST aligns parameter updates with the internal organization of safety behavior by clustering functionally coherent safety neurons and enforcing shared updates within each cluster, enabling targeted and stable safety adaptation without broad model modification or inference-time overhead. We benchmark NeST against three dominant baselines: full fine-tuning, LoRA-based fine-tuning, and circuit breakers across 10 open-weight LLMs spanning multiple model families and sizes. Across all evaluated models, NeST reduces the attack success rate from an average of 44.5% to 4.36%, corresponding to a 90.2% reduction in unsafe generations, while requiring only 0.44 million trainable parameters on average. This amounts to a 17,310x decrease in updated parameters compared to full fine-tuning and a 9.25x reduction relative to LoRA, while consistently achieving stronger safety performance for alignment.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CR"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16835",
+      "authors": [
+        "Sasha Behrouzi, Lichao Wu, Mohamadreza Rostami, Ahmad-Reza Sadeghi"
+      ],
+      "keyword_score": 0.3333333333333333,
+      "popularity_score": 0.0,
+      "combined_score": 0.19999999999999998,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17229",
+      "title": "Mechanistic Interpretability of Cognitive Complexity in LLMs via Linear Probing using Bloom's Taxonomy",
+      "abstract": "The black-box nature of Large Language Models necessitates novel evaluation frameworks that transcend surface-level performance metrics. This study investigates the internal neural representations of cognitive complexity using Bloom's Taxonomy as a hierarchical lens. By analyzing high-dimensional activation vectors from different LLMs, we probe whether different cognitive levels, ranging from basic recall (Remember) to abstract synthesis (Create), are linearly separable within the model's residual streams. Our results demonstrate that linear classifiers achieve approximately 95% mean accuracy across all Bloom levels, providing strong evidence that cognitive level is encoded in a linearly accessible subspace of the model's representations. These findings provide evidence that the model resolves the cognitive difficulty of a prompt early in the forward pass, with representations becoming increasingly separable across layers.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17229",
+      "authors": [
+        "Bianca Raimondi, Maurizio Gabbrielli"
+      ],
+      "keyword_score": 0.30303030303030304,
+      "popularity_score": 0.0,
+      "combined_score": 0.18181818181818182,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16839",
+      "title": "Training Large Reasoning Models Efficiently via Progressive Thought Encoding",
+      "abstract": "Large reasoning models (LRMs) excel on complex problems but face a critical barrier to efficiency: reinforcement learning (RL) training requires long rollouts for outcome-based rewards, where autoregressive decoding dominates time and memory usage. While sliding-window cache strategies can bound memory, they disrupt long-context reasoning and degrade performance. We introduce Progressive Thought Encoding, a parameter-efficient fine-tuning method that enables LRMs to reason effectively under fixed-size caches. By progressively encoding intermediate reasoning into fixed-size vector representations, our approach eliminates the need to backpropagate through full-cache rollouts, thereby reducing memory usage, while maintaining constant memory during inference. Experiments on three models, including Qwen2.5-3B-Instruct, Qwen2.5-7B-Instruct, and DeepSeek-R1-Distill-Llama-8B, on six widely used challenging mathematical benchmarks show consistent gains: our method achieves +19.3% improvement over LoRA-based fine-tuning and +29.9% over LRMs without fine-tuning on average, with up to +23.4 accuracy improvement on AIME2024/2025 under the same tight cache budgets. These results demonstrate that Progressive Thought Encoding not only improves reasoning accuracy but also makes RL training of LRMs substantially more efficient and scalable under real-world memory constraints.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16839",
+      "authors": [
+        "Zeliang Zhang, Xiaodong Liu, Hao Cheng, Hao Sun, Chenliang Xu, Jianfeng Gao"
+      ],
+      "keyword_score": 0.30303030303030304,
+      "popularity_score": 0.0,
+      "combined_score": 0.18181818181818182,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2412.06106",
+      "title": "Efficient Context Propagating Perceiver Architectures for Auto-Regressive Language Modeling",
+      "abstract": "One of the key challenges in Transformer architectures is the quadratic complexity of the attention mechanism, which limits the efficient processing of long sequences. Many recent research works have attempted to provide a reduction from the $O(n^2)$ time complexity of attention to semi-linear complexity. However, it remains an unsolved problem in the sense of maintaining high performance when complexity is reduced. One of the important works in this respect is the Perceiver class of architectures that have demonstrated excellent performance, while reducing the computation complexity. In this paper, we use the PerceiverAR as a basis and explore the design space of different trade-offs between preserving context and reducing attention complexity. To this end, we develop four new architectural paradigms, the best performing of which we denote as the Efficient Context propagating Perceiver (ECP). ECP has two major advantages over the PerceiverAR. First, the ECP architecture overcomes the main drawback of PercieverAR by utilizing both the context and the latent sequences in autoregressive training. Second, the ECP architecture operates with the same attention complexity as LongLoRA, making it computationally efficient. More importantly, via pairwise segment attention, it extracts better information resulting in improved language modeling. Empirically, we demonstrate that the ECP architecture significantly outperforms other state-of-the-art Transformer models on Wikitext-103, PG-19 and sCIFAR-10.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2412.06106",
+      "authors": [
+        "Kaleel Mahmood, Shaoyi Huang"
+      ],
+      "keyword_score": 0.30303030303030304,
+      "popularity_score": 0.0,
+      "combined_score": 0.18181818181818182,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16823",
+      "title": "Formal Mechanistic Interpretability: Automated Circuit Discovery with Provable Guarantees",
+      "abstract": "*Automated circuit discovery* is a central tool in mechanistic interpretability for identifying the internal components of neural networks responsible for specific behaviors. While prior methods have made significant progress, they typically depend on heuristics or approximations and do not offer provable guarantees over continuous input domains for the resulting circuits. In this work, we leverage recent advances in neural network verification to propose a suite of automated algorithms that yield circuits with *provable guarantees*. We focus on three types of guarantees: (1) *input domain robustness*, ensuring the circuit agrees with the model across a continuous input region; (2) *robust patching*, certifying circuit alignment under continuous patching perturbations; and (3) *minimality*, formalizing and capturing a wide array of various notions of succinctness. Interestingly, we uncover a diverse set of novel theoretical connections among these three families of guarantees, with critical implications for the convergence of our algorithms. Finally, we conduct experiments with state-of-the-art verifiers on various vision models, showing that our algorithms yield circuits with substantially stronger robustness guarantees than standard circuit discovery methods, establishing a principled foundation for provable circuit discovery.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.LO"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16823",
+      "authors": [
+        "Itamar Hadad, Guy Katz, Shahaf Bassan"
+      ],
+      "keyword_score": 0.30303030303030304,
+      "popularity_score": 0.0,
+      "combined_score": 0.18181818181818182,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16727",
+      "title": "Mobility-Aware Cache Framework for Scalable LLM-Based Human Mobility Simulation",
+      "abstract": "Large-scale human mobility simulation is critical for applications such as urban planning, epidemiology, and transportation analysis. Recent works treat large language models (LLMs) as human agents to simulate realistic mobility behaviors using structured reasoning, but their high computational cost limits scalability. To address this, we design a mobility-aware cache framework named MobCache that leverages reconstructible caches to enable efficient large-scale human mobility simulations. It consists of: (1) a reasoning component that encodes each reasoning step as a latent-space embedding and uses a latent-space evaluator to enable the reuse and recombination of reasoning steps; and (2) a decoding component that employs a lightweight decoder trained with mobility law-constrained distillation to translate latent-space reasoning chains into natural language, thereby improving simulation efficiency while maintaining fidelity. Experiments show that MobCache significantly improves efficiency across multiple dimensions while maintaining performance comparable to state-of-the-art LLM-based methods.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16727",
+      "authors": [
+        "Hua Yan, Heng Tan, Yingxue Zhang, Yu Yang"
+      ],
+      "keyword_score": 0.2727272727272727,
+      "popularity_score": 0.0,
+      "combined_score": 0.1636363636363636,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17431",
+      "title": "Fine-Grained Uncertainty Quantification for Long-Form Language Model Outputs: A Comparative Study",
+      "abstract": "Uncertainty quantification has emerged as an effective approach to closed-book hallucination detection for LLMs, but existing methods are largely designed for short-form outputs and do not generalize well to long-form generation. We introduce a taxonomy for fine-grained uncertainty quantification in long-form LLM outputs that distinguishes methods by design choices at three stages: response decomposition, unit-level scoring, and response-level aggregation. We formalize several families of consistency-based black-box scorers, providing generalizations and extensions of existing methods. In our experiments across multiple LLMs and datasets, we find 1) claim-response entailment consistently performs better or on par with more complex claim-level scorers, 2) claim-level scoring generally yields better results than sentence-level scoring, and 3) uncertainty-aware decoding is highly effective for improving the factuality of long-form outputs. Our framework clarifies relationships between prior methods, enables apples-to-apples comparisons, and provides practical guidance for selecting components for fine-grained UQ.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17431",
+      "authors": [
+        "Dylan Bouchard, Mohit Singh Chauhan, Viren Bajaj, David Skarbrevik"
+      ],
+      "keyword_score": 0.2727272727272727,
+      "popularity_score": 0.0,
+      "combined_score": 0.1636363636363636,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17072",
+      "title": "BankMathBench: A Benchmark for Numerical Reasoning in Banking Scenarios",
+      "abstract": "Large language models (LLMs)-based chatbots are increasingly being adopted in the financial domain, particularly in digital banking, to handle customer inquiries about products such as deposits, savings, and loans. However, these models still exhibit low accuracy in core banking computations-including total payout estimation, comparison of products with varying interest rates, and interest calculation under early repayment conditions. Such tasks require multi-step numerical reasoning and contextual understanding of banking products, yet existing LLMs often make systematic errors-misinterpreting product types, applying conditions incorrectly, or failing basic calculations involving exponents and geometric progressions. However, such errors have rarely been captured by existing benchmarks. Mathematical datasets focus on fundamental math problems, whereas financial benchmarks primarily target financial documents, leaving everyday banking scenarios underexplored. To address this limitation, we propose BankMathBench, a domain-specific dataset that reflects realistic banking tasks. BankMathBench is organized in three levels of difficulty-basic, intermediate, and advanced-corresponding to single-product reasoning, multi-product comparison, and multi-condition scenarios, respectively. When trained on BankMathBench, open-source LLMs exhibited notable improvements in both formula generation and numerical reasoning accuracy, demonstrating the dataset's effectiveness in enhancing domain-specific reasoning. With tool-augmented fine-tuning, the models achieved average accuracy increases of 57.6%p (basic), 75.1%p (intermediate), and 62.9%p (advanced), representing significant gains over zero-shot baselines. These findings highlight BankMathBench as a reliable benchmark for evaluating and advancing LLMs' numerical reasoning in real-world banking scenarios.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17072",
+      "authors": [
+        "Yunseung Lee, Subin Kim, Youngjun Kwak, Jaegul Choo"
+      ],
+      "keyword_score": 0.2727272727272727,
+      "popularity_score": 0.0,
+      "combined_score": 0.1636363636363636,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17469",
+      "title": "Auditing Reciprocal Sentiment Alignment: Inversion Risk, Dialect Representation and Intent Misalignment in Transformers",
+      "abstract": "The core theme of bidirectional alignment is ensuring that AI systems accurately understand human intent and that humans can trust AI behavior. However, this loop fractures significantly across language barriers. Our research addresses Cross-Lingual Sentiment Misalignment between Bengali and English by benchmarking four transformer architectures. We reveal severe safety and representational failures in current alignment paradigms. We demonstrate that compressed model (mDistilBERT) exhibits 28.7% \"Sentiment Inversion Rate,\" fundamentally misinterpreting positive user intent as negative (or vice versa). Furthermore, we identify systemic nuances affecting human-AI trust, including \"Asymmetric Empathy\" where some models systematically dampen and others amplify the affective weight of Bengali text relative to its English counterpart. Finally, we reveal a \"Modern Bias\" in the regional model (IndicBERT), which shows a 57% increase in alignment error when processing formal (Sadhu) Bengali. We argue that equitable human-AI co-evolution requires pluralistic, culturally grounded alignment that respects language and dialectal diversity over universal compression, which fails to preserve the emotional fidelity required for reciprocal human-AI trust. We recommend that alignment benchmarks incorporate \"Affective Stability\" metrics that explicitly penalize polarity inversions in low-resource and dialectal contexts.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.HC"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17469",
+      "authors": [
+        "Nusrat Jahan Lia, Shubhashis Roy Dipta"
+      ],
+      "keyword_score": 0.2727272727272727,
+      "popularity_score": 0.0,
+      "combined_score": 0.1636363636363636,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2506.16777",
+      "title": "DistillNote: Toward a Functional Evaluation Framework of LLM-Generated Clinical Note Summaries",
+      "abstract": "Large language models (LLMs) are increasingly used to generate summaries from clinical notes. However, their ability to preserve essential diagnostic information remains underexplored, which could lead to serious risks for patient care. This study introduces DistillNote, an evaluation framework for LLM summaries that targets their functional utility by applying the generated summary downstream in a complex clinical prediction task, explicitly quantifying how much prediction signal is retained. We generated over 192,000 LLM summaries from MIMIC-IV clinical notes with increasing compression rates: standard, section-wise, and distilled section-wise. Heart failure diagnosis was chosen as the prediction task, as it requires integrating a wide range of clinical signals. LLMs were fine-tuned on both the original notes and their summaries, and their diagnostic performance was compared using the AUROC metric. We contrasted DistillNote's results with evaluations from LLM-as-judge and clinicians, assessing consistency across different evaluation methods. Summaries generated by LLMs maintained a strong level of heart failure diagnostic signal despite substantial compression. Models trained on the most condensed summaries (about 20 times smaller) achieved an AUROC of 0.92, compared to 0.94 with the original note baseline (97 percent retention). Functional evaluation provided a new lens for medical summary assessment, emphasizing clinical utility as a key dimension of quality. DistillNote introduces a new scalable, task-based method for assessing the functional utility of LLM-generated clinical summaries. Our results detail compression-to-performance tradeoffs from LLM clinical summarization for the first time. The framework is designed to be adaptable to other prediction tasks and clinical domains, aiding data-driven decisions about deploying LLM summarizers in real-world healthcare settings.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2506.16777",
+      "authors": [
+        "Heloisa Oss Boll, Antonio Oss Boll, Leticia Puttlitz Boll, Ameen Abu Hanna, Iacer Calixto"
+      ],
+      "keyword_score": 0.2727272727272727,
+      "popularity_score": 0.0,
+      "combined_score": 0.1636363636363636,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16796",
+      "title": "Efficient Tail-Aware Generative Optimization via Flow Model Fine-Tuning",
+      "abstract": "Fine-tuning pre-trained diffusion and flow models to optimize downstream utilities is central to real-world deployment. Existing entropy-regularized methods primarily maximize expected reward, providing no mechanism to shape tail behavior. However, tail control is often essential: the lower tail determines reliability by limiting low-reward failures, while the upper tail enables discovery by prioritizing rare, high-reward outcomes. In this work, we present Tail-aware Flow Fine-Tuning (TFFT), a principled and efficient distributional fine-tuning algorithm based on the Conditional Value-at-Risk (CVaR). We address two distinct tail-shaping goals: right-CVaR for seeking novel samples in the high-reward tail and left-CVaR for controlling worst-case samples in the low-reward tail. Unlike prior approaches that rely on non-linear optimization, we leverage the variational dual formulation of CVaR to decompose it into a decoupled two-stage procedure: a lightweight one-dimensional threshold optimization step, and a single entropy-regularized fine-tuning process via a specific pseudo-reward. This decomposition achieves CVaR fine-tuning efficiently with computational cost comparable to standard expected fine-tuning methods. We demonstrate the effectiveness of TFFT across illustrative experiments, high-dimensional text-to-image generation, and molecular design.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math.OC"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16796",
+      "authors": [
+        "Zifan Wang, Riccardo De Santi, Xiaoyu Mo, Michael M. Zavlanos, Andreas Krause, Karl H. Johansson"
+      ],
+      "keyword_score": 0.2727272727272727,
+      "popularity_score": 0.0,
+      "combined_score": 0.1636363636363636,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17544",
+      "title": "Evaluating Chain-of-Thought Reasoning through Reusability and Verifiability",
+      "abstract": "In multi-agent IR pipelines for tasks such as search and ranking, LLM-based agents exchange intermediate reasoning in terms of Chain-of-Thought (CoT) with each other. Current CoT evaluation narrowly focuses on target task accuracy. However, this metric fails to assess the quality or utility of the reasoning process itself. To address this limitation, we introduce two novel measures: reusability and verifiability. We decouple CoT generation from execution using a Thinker-Executor framework. Reusability measures how easily an Executor can reuse the Thinker's CoT. Verifiability measures how frequently an Executor can match the Thinker's answer using the CoT. We evaluated four Thinker models against a committee of ten Executor models across five benchmarks. Our results reveal that reusability and verifiability do not correlate with standard accuracy, exposing a blind spot in current accuracy-based leaderboards for reasoning capability. Surprisingly, we find that CoTs from specialized reasoning models are not consistently more reusable or verifiable than those from general-purpose LLMs like Llama and Gemma.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.IR"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17544",
+      "authors": [
+        "Shashank Aggarwal, Ram Vikas Mishra, Amit Awekar"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16740",
+      "title": "Quantifying LLM Attention-Head Stability: Implications for Circuit Universality",
+      "abstract": "In mechanistic interpretability, recent work scrutinizes transformer \"circuits\" - sparse, mono or multi layer sub computations, that may reflect human understandable functions. Yet, these network circuits are rarely acid-tested for their stability across different instances of the same deep learning architecture. Without this, it remains unclear whether reported circuits emerge universally across labs or turn out to be idiosyncratic to a particular estimation instance, potentially limiting confidence in safety-critical settings. Here, we systematically study stability across-refits in increasingly complex transformer language models of various sizes. We quantify, layer by layer, how similarly attention heads learn representations across independently initialized training runs. Our rigorous experiments show that (1) middle-layer heads are the least stable yet the most representationally distinct; (2) deeper models exhibit stronger mid-depth divergence; (3) unstable heads in deeper layers become more functionally important than their peers from the same layer; (4) applying weight decay optimization substantially improves attention-head stability across random model initializations; and (5) the residual stream is comparatively stable. Our findings establish the cross-instance robustness of circuits as an essential yet underappreciated prerequisite for scalable oversight, drawing contours around possible white-box monitorability of AI systems.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16740",
+      "authors": [
+        "Karan Bali, Jack Stanley, Praneet Suresh, Danilo Bzdok"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17345",
+      "title": "What Breaks Embodied AI Security:LLM Vulnerabilities, CPS Flaws,or Something Else?",
+      "abstract": "Embodied AI systems (e.g., autonomous vehicles, service robots, and LLM-driven interactive agents) are rapidly transitioning from controlled environments to safety critical real-world deployments. Unlike disembodied AI, failures in embodied intelligence lead to irreversible physical consequences, raising fundamental questions about security, safety, and reliability. While existing research predominantly analyzes embodied AI through the lenses of Large Language Model (LLM) vulnerabilities or classical Cyber-Physical System (CPS) failures, this survey argues that these perspectives are individually insufficient to explain many observed breakdowns in modern embodied systems. We posit that a significant class of failures arises from embodiment-induced system-level mismatches, rather than from isolated model flaws or traditional CPS attacks. Specifically, we identify four core insights that explain why embodied AI is fundamentally harder to secure: (i) semantic correctness does not imply physical safety, as language-level reasoning abstracts away geometry, dynamics, and contact constraints; (ii) identical actions can lead to drastically different outcomes across physical states due to nonlinear dynamics and state uncertainty; (iii) small errors propagate and amplify across tightly coupled perception-decision-action loops; and (iv) safety is not compositional across time or system layers, enabling locally safe decisions to accumulate into globally unsafe behavior. These insights suggest that securing embodied AI requires moving beyond component-level defenses toward system-level reasoning about physical risk, uncertainty, and failure propagation.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CR"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17345",
+      "authors": [
+        "Boyang Ma, Hechuan Guo, Peizhuo Lv, Minghui Xu, Xuelong Dai, YeChao Zhang, Yijun Yang, Yue Zhang"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2505.02819",
+      "title": "ReplaceMe: Network Simplification via Depth Pruning and Transformer Block Linearization",
+      "abstract": "We introduce ReplaceMe, a generalized training-free depth pruning method that effectively replaces transformer blocks with a linear operation, while maintaining high performance for low compression ratios. In contrast to conventional pruning approaches that require additional training or fine-tuning, our approach requires only a small calibration dataset that is used to estimate a linear transformation, which approximates the pruned blocks. The estimated linear mapping can be seamlessly merged with the remaining transformer blocks, eliminating the need for any additional network parameters. Our experiments show that ReplaceMe consistently outperforms other training-free approaches and remains highly competitive with state-of-the-art pruning methods that involve extensive retraining/fine-tuning and architectural modifications. Applied to several large language models (LLMs), ReplaceMe achieves up to 25\\% pruning while retaining approximately 90\\% of the original model's performance on open benchmarks - without any training or healing steps, resulting in minimal computational overhead. We provide an open-source library implementing ReplaceMe alongside several state-of-the-art depth pruning techniques, available at https://github.com/mts-ai/ReplaceMe",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2505.02819",
+      "authors": [
+        "Dmitriy Shopkhoev, Ammar Ali, Magauiya Zhussip, Valentin Malykh, Stamatios Lefkimmiatis, Nikos Komodakis, Sergey Zagoruyko"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2509.19877",
+      "title": "Advancing Universal Deep Learning for Electronic-Structure Hamiltonian Prediction of Materials",
+      "abstract": "Deep learning methods for electronic-structure Hamiltonian prediction has offered significant computational efficiency advantages over traditional DFT methods, yet the diversity of atomic types, structural patterns, and the high-dimensional complexity of Hamiltonians pose substantial challenges to the generalization performance. In this work, we contribute on both the methodology and dataset sides to advance universal deep learning paradigm for Hamiltonian prediction. On the method side, we propose NextHAM, a neural E(3)-symmetry and expressive correction method for efficient and generalizable materials electronic-structure Hamiltonian prediction. First, we introduce the zeroth-step Hamiltonians, which can be efficiently constructed by the initial charge density of DFT, as informative descriptors of neural regression model in the input level and initial estimates of the target Hamiltonian in the output level, so that the regression model directly predicts the correction terms to the target ground truths, thereby significantly simplifying the input-output mapping for learning. Second, we present a neural Transformer architecture with strict E(3)-Symmetry and high non-linear expressiveness for Hamiltonian prediction. Third, we propose a novel training objective to ensure the accuracy performance of Hamiltonians in both real space and reciprocal space, preventing error amplification and the occurrence of \"ghost states\" caused by the large condition number of the overlap matrix. On the dataset side, we curate a high-quality broad-coverage large benchmark, namely Materials-HAM-SOC, comprising 17,000 material structures spanning 68 elements from six rows of the periodic table and explicitly incorporating SOC effects. Experimental results on Materials-HAM-SOC demonstrate that NextHAM achieves excellent accuracy and efficiency in predicting Hamiltonians and band structures.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG",
+        "cond-mat.mtrl-sci",
+        "physics.chem-ph",
+        "physics.comp-ph"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2509.19877",
+      "authors": [
+        "Shi Yin, Zujian Dai, Xinyang Pan, Lixin He"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16177",
+      "title": "Conjugate Learning Theory: Uncovering the Mechanisms of Trainability and Generalization in Deep Neural Networks",
+      "abstract": "In this work, we propose a notion of practical learnability grounded in finite sample settings, and develop a conjugate learning theoretical framework based on convex conjugate duality to characterize this learnability property. Building on this foundation, we demonstrate that training deep neural networks (DNNs) with mini-batch stochastic gradient descent (SGD) achieves global optima of empirical risk by jointly controlling the extreme eigenvalues of a structure matrix and the gradient energy, and we establish a corresponding convergence theorem. We further elucidate the impact of batch size and model architecture (including depth, parameter count, sparsity, skip connections, and other characteristics) on non-convex optimization. Additionally, we derive a model-agnostic lower bound for the achievable empirical risk, theoretically demonstrating that data determines the fundamental limit of trainability. On the generalization front, we derive deterministic and probabilistic bounds on generalization error based on generalized conditional entropy measures. The former explicitly delineates the range of generalization error, while the latter characterizes the distribution of generalization error relative to the deterministic bounds under independent and identically distributed (i.i.d.) sampling conditions. Furthermore, these bounds explicitly quantify the influence of three key factors: (i) information loss induced by irreversibility in the model, (ii) the maximum attainable loss value, and (iii) the generalized conditional entropy of features with respect to labels. Moreover, they offer a unified theoretical lens for understanding the roles of regularization, irreversible transformations, and network depth in shaping the generalization behavior of deep neural networks. Extensive experiments validate all theoretical predictions, confirming the framework's correctness and consistency.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "stat.ML",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16177",
+      "authors": [
+        "Binchuan Qi"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17025",
+      "title": "WS-GRPO: Weakly-Supervised Group-Relative Policy Optimization for Rollout-Efficient Reasoning",
+      "abstract": "Group Relative Policy Optimization (GRPO) is effective for training language models on complex reasoning. However, since the objective is defined relative to a group of sampled trajectories, extended deliberation can create more chances to realize relative gains, leading to inefficient reasoning and overthinking, and complicating the trade-off between correctness and rollout efficiency. Controlling this behavior is difficult in practice, considering (i) Length penalties are hard to calibrate because longer rollouts may reflect harder problems that require longer reasoning, penalizing tokens risks truncating useful reasoning along with redundant continuation; and (ii) supervision that directly indicates when to continue or stop is typically unavailable beyond final answer correctness. We propose Weakly Supervised GRPO (WS-GRPO), which improves rollout efficiency by converting terminal rewards into correctness-aware guidance over partial trajectories. Unlike global length penalties that are hard to calibrate, WS-GRPO trains a preference model from outcome-only correctness to produce prefix-level signals that indicate when additional continuation is beneficial. Thus, WS-GRPO supplies outcome-derived continue/stop guidance, reducing redundant deliberation while maintaining accuracy. We provide theoretical results and empirically show on reasoning benchmarks that WS-GRPO substantially reduces rollout length while remaining competitive with GRPO baselines.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17025",
+      "authors": [
+        "Gagan Mundada, Zihan Huang, Rohan Surana, Sheldon Yu, Jennifer Yuntong Zhang, Xintong Li, Tong Yu, Lina Yao, Jingbo Shang, Julian McAuley, Junda Wu"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2509.26522",
+      "title": "Entropy After $\\langle \\texttt{/Think} \\rangle$ for reasoning model early exiting",
+      "abstract": "Reasoning LLMs show improved performance with longer chains of thought. However, recent work has highlighted their tendency to overthink, continuing to revise answers even after reaching the correct solution. We quantitatively confirm this inefficiency from the distribution dynamics perspective by tracking Pass@1 for answers averaged over a large number of rollouts and find the model often begins to always produce the correct answer early in the reasoning, making extra reasoning tokens wasteful. To detect and prevent overthinking, we propose a simple and inexpensive novel signal, Entropy After  (EAT), for monitoring and deciding whether to exit reasoning early. By appending a stop thinking token () and monitoring the entropy of the following token as the model reasons, we obtain a trajectory that decreases and stabilizes when Pass@1 plateaus; thresholding its variance under an exponential moving average yields a practical stopping rule. Importantly, our approach enables adaptively allocating compute based on the EAT trajectory, allowing us to spend compute in a more efficient way compared with fixing the token budget for all questions. Empirically, on MATH500 and AIME2025, EAT reduces token usage by 12 - 22% without harming accuracy. EAT also remains effective in black box settings where logits from the reasoning model are not accessible, and EAT is computed with proxy models: We verified the feasibility via early stopping Llama 70B with a 1.5B model and Claude 3.7 with a local 4B model.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2509.26522",
+      "authors": [
+        "Xi Wang, James McInerney, Lequn Wang, Nathan Kallus"
+      ],
+      "keyword_score": 0.24242424242424243,
+      "popularity_score": 0.0,
+      "combined_score": 0.14545454545454545,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16901",
+      "title": "AgentLAB: Benchmarking LLM Agents against Long-Horizon Attacks",
+      "abstract": "LLM agents are increasingly deployed in long-horizon, complex environments to solve challenging problems, but this expansion exposes them to long-horizon attacks that exploit multi-turn user-agent-environment interactions to achieve objectives infeasible in single-turn settings. To measure agent vulnerabilities to such risks, we present AgentLAB, the first benchmark dedicated to evaluating LLM agent susceptibility to adaptive, long-horizon attacks. Currently, AgentLAB supports five novel attack types including intent hijacking, tool chaining, task injection, objective drifting, and memory poisoning, spanning 28 realistic agentic environments, and 644 security test cases. Leveraging AgentLAB, we evaluate representative LLM agents and find that they remain highly susceptible to long-horizon attacks; moreover, defenses designed for single-turn interactions fail to reliably mitigate long-horizon threats. We anticipate that AgentLAB will serve as a valuable benchmark for tracking progress on securing LLM agents in practical settings. The benchmark is publicly available at https://tanqiujiang.github.io/AgentLAB_main.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16901",
+      "authors": [
+        "Tanqiu Jiang, Yuhui Wang, Jiacheng Liang, Ting Wang"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17566",
+      "title": "A Hybrid Federated Learning Based Ensemble Approach for Lung Disease Diagnosis Leveraging Fusion of SWIN Transformer and CNN",
+      "abstract": "The significant advancements in computational power cre- ate a vast opportunity for using Artificial Intelligence in different ap- plications of healthcare and medical science. A Hybrid FL-Enabled Ensemble Approach For Lung Disease Diagnosis Leveraging a Combination of SWIN Transformer and CNN is the combination of cutting-edge technology of AI and Federated Learning. Since, medi- cal specialists and hospitals will have shared data space, based on that data, with the help of Artificial Intelligence and integration of federated learning, we can introduce a secure and distributed system for medical data processing and create an efficient and reliable system. The proposed hybrid model enables the detection of COVID-19 and Pneumonia based on x-ray reports. We will use advanced and the latest available tech- nology offered by Tensorflow and Keras along with Microsoft-developed Vision Transformer, that can help to fight against the pandemic that the world has to fight together as a united. We focused on using the latest available CNN models (DenseNet201, Inception V3, VGG 19) and the Transformer model SWIN Transformer in order to prepare our hy- brid model that can provide a reliable solution as a helping hand for the physician in the medical field. In this research, we will discuss how the Federated learning-based Hybrid AI model can improve the accuracy of disease diagnosis and severity prediction of a patient using the real-time continual learning approach and how the integration of federated learn- ing can ensure hybrid model security and keep the authenticity of the information.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17566",
+      "authors": [
+        "Asif Hasan Chowdhury, Md. Fahim Islam, M Ragib Anjum Riad, Faiyaz Bin Hashem, Md Tanzim Reza, Md. Golam Rabiul Alam"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16742",
+      "title": "DeepVision-103K: A Visually Diverse, Broad-Coverage, and Verifiable Mathematical Dataset for Multimodal Reasoning",
+      "abstract": "Reinforcement Learning with Verifiable Rewards (RLVR) has been shown effective in enhancing the visual reflection and reasoning capabilities of Large Multimodal Models (LMMs). However, existing datasets are predominantly derived from either small-scale manual construction or recombination of prior resources, which limits data diversity and coverage, thereby constraining further gains in model performance. To this end, we introduce \\textbf{DeepVision-103K}, a comprehensive dataset for RLVR training that covers diverse K12 mathematical topics, extensive knowledge points, and rich visual elements. Models trained on DeepVision achieve strong performance on multimodal mathematical benchmarks, and generalize effectively to general multimodal reasoning tasks. Further analysis reveals enhanced visual perception, reflection and reasoning capabilities in trained models, validating DeepVision's effectiveness for advancing multimodal reasoning. Data: \\href{https://huggingface.co/datasets/skylenage/DeepVision-103K}{this url}.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16742",
+      "authors": [
+        "Haoxiang Sun, Lizhen Xu, Bing Zhao, Wotao Yin, Wei Wang, Boyu Yang, Rui Wang, Hu Wei"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17022",
+      "title": "ReIn: Conversational Error Recovery with Reasoning Inception",
+      "abstract": "Conversational agents powered by large language models (LLMs) with tool integration achieve strong performance on fixed task-oriented dialogue datasets but remain vulnerable to unanticipated, user-induced errors. Rather than focusing on error prevention, this work focuses on error recovery, which necessitates the accurate diagnosis of erroneous dialogue contexts and execution of proper recovery plans. Under realistic constraints precluding model fine-tuning or prompt modification due to significant cost and time requirements, we explore whether agents can recover from contextually flawed interactions and how their behavior can be adapted without altering model parameters and prompts. To this end, we propose Reasoning Inception (ReIn), a test-time intervention method that plants an initial reasoning into the agent's decision-making process. Specifically, an external inception module identifies predefined errors within the dialogue context and generates recovery plans, which are subsequently integrated into the agent's internal reasoning process to guide corrective actions, without modifying its parameters or system prompts. We evaluate ReIn by systematically simulating conversational failure scenarios that directly hinder successful completion of user goals: user's ambiguous and unsupported requests. Across diverse combinations of agent models and inception modules, ReIn substantially improves task success and generalizes to unseen error types. Moreover, it consistently outperforms explicit prompt-modification approaches, underscoring its utility as an efficient, on-the-fly method. In-depth analysis of its operational mechanism, particularly in relation to instruction hierarchy, indicates that jointly defining recovery tools with ReIn can serve as a safe and effective strategy for improving the resilience of conversational agents without modifying the backbone models or system prompts.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17022",
+      "authors": [
+        "Takyoung Kim, Jinseok Nam, Chandrayee Basu, Xing Fan, Chengyuan Ma, Heng Ji, Gokhan Tur, Dilek Hakkani-T\\\"ur"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17410",
+      "title": "Improving LLM-based Recommendation with Self-Hard Negatives from Intermediate Layers",
+      "abstract": "Large language models (LLMs) have shown great promise in recommender systems, where supervised fine-tuning (SFT) is commonly used for adaptation. Subsequent studies further introduce preference learning to incorporate negative samples into the training process. However, existing methods rely on sequence-level, offline-generated negatives, making them less discriminative and informative when adapting LLMs to recommendation tasks with large negative item spaces. To address these challenges, we propose ILRec, a novel preference fine-tuning framework for LLM-based recommendation, leveraging self-hard negative signals extracted from intermediate layers to improve preference learning. Specifically, we identify self-hard negative tokens from intermediate layers as fine-grained negative supervision that dynamically reflects the model's preference learning process. To effectively integrate these signals into training, we design a two-stage framework comprising cross-layer preference optimization and cross-layer preference distillation, enabling the model to jointly discriminate informative negatives and enhance the quality of negative signals from intermediate layers. In addition, we introduce a lightweight collaborative filtering model to assign token-level rewards for negative signals, mitigating the risk of over-penalizing false negatives. Extensive experiments on three datasets demonstrate ILRec's effectiveness in enhancing the performance of LLM-based recommender systems.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.IR"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17410",
+      "authors": [
+        "Bingqian Li, Bowen Zheng, Xiaolei Wang, Long Zhang, Jinpeng Wang, Sheng Chen, Wayne Xin Zhao, Ji-rong Wen"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2505.16928",
+      "title": "Beyond Needle(s) in the Embodied Haystack: Environment, Architecture, and Training Considerations for Long Context Reasoning",
+      "abstract": "We introduce $\\infty$-THOR, a new framework for long-horizon embodied tasks that advances long-context understanding in embodied AI. $\\infty$-THOR provides: (1) a generation framework for synthesizing scalable, reproducible, and unlimited long-horizon trajectories; (2) a novel embodied QA task, Needle(s) in the Embodied Haystack, where multiple scattered clues across extended trajectories test agents' long-context reasoning ability; and (3) a long-horizon dataset and benchmark suite featuring complex tasks that span hundreds of environment steps, each paired with ground-truth action sequences. To enable this capability, we explore architectural adaptations, including interleaved Goal-State-Action modeling, context extension techniques, and Context Parallelism, to equip LLM-based agents for extreme long-context reasoning and interaction. Experimental results and analyses highlight the challenges posed by our benchmark and provide insights into training strategies and model behaviors under long-horizon conditions. Our work provides a foundation for the next generation of embodied AI systems capable of robust, long-term reasoning and planning.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG",
+        "cs.RO"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2505.16928",
+      "authors": [
+        "Bosung Kim, Prithviraj Ammanabrolu"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16053",
+      "title": "Multi-Objective Alignment of Language Models for Personalized Psychotherapy",
+      "abstract": "Mental health disorders affect over 1 billion people worldwide, yet access to care remains limited by workforce shortages and cost constraints. While AI systems show therapeutic promise, current alignment approaches optimize objectives independently, failing to balance patient preferences with clinical safety. We survey 335 individuals with lived mental health experience to collect preference rankings across therapeutic dimensions, then develop a multi-objective alignment framework using direct preference optimization. We train reward models for six criteria -- empathy, safety, active listening, self-motivated change, trust/rapport, and patient autonomy -- and systematically compare multi-objective approaches against single-objective optimization, supervised fine-tuning, and parameter merging. Multi-objective DPO (MODPO) achieves superior balance (77.6% empathy, 62.6% safety) compared to single-objective optimization (93.6% empathy, 47.8% safety), and therapeutic criteria outperform general communication principles by 17.2%. Blinded clinician evaluation confirms MODPO is consistently preferred, with LLM-evaluator agreement comparable to inter-clinician reliability.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16053",
+      "authors": [
+        "Mehrab Beikzadeh, Yasaman Asadollah Salmanpour, Ashima Suvarna, Sriram Sankararaman, Matteo Malgaroli, Majid Sarrafzadeh, Saadia Gabriel"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16787",
+      "title": "Better Think Thrice: Learning to Reason Causally with Double Counterfactual Consistency",
+      "abstract": "Despite their strong performance on reasoning benchmarks, large language models (LLMs) have proven brittle when presented with counterfactual questions, suggesting weaknesses in their causal reasoning ability. While recent work has demonstrated that labeled counterfactual tasks can be useful benchmarks of LLMs' causal reasoning, producing such data at the scale required to cover the vast potential space of counterfactuals is limited. In this work, we introduce double counterfactual consistency (DCC), a lightweight inference-time method for measuring and guiding the ability of LLMs to reason causally. Without requiring labeled counterfactual data, DCC verifies a model's ability to execute two important elements of causal reasoning: causal intervention and counterfactual prediction. Using DCC, we evaluate the causal reasoning abilities of various leading LLMs across a range of reasoning tasks and interventions. Moreover, we demonstrate the effectiveness of DCC as a training-free test-time rejection sampling criterion and show that it can directly improve performance on reasoning tasks across multiple model families.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16787",
+      "authors": [
+        "Victoria Lin, Xinnuo Xu, Rachel Lawrence, Risa Ueno, Amit Sharma, Javier Gonzalez, Niranjani Prasad"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2510.21193",
+      "title": "Estonian Native Large Language Model Benchmark",
+      "abstract": "The availability of LLM benchmarks for the Estonian language is limited, and a comprehensive evaluation comparing the performance of different LLMs on Estonian tasks has yet to be conducted. We introduce a new benchmark for evaluating LLMs in Estonian, based on seven diverse datasets. These datasets assess general and domain-specific knowledge, understanding of Estonian grammar and vocabulary, summarization abilities, contextual comprehension, and more. The datasets are all generated from native Estonian sources without using machine translation. We compare the performance of base models, instruction-tuned open-source models, and commercial models. Our evaluation includes 6 base models and 26 instruction-tuned models. To assess the results, we employ both human evaluation and LLM-as-a-judge methods. Human evaluation scores showed moderate to high correlation with benchmark evaluations, depending on the dataset. Claude 3.7 Sonnet, used as an LLM judge, demonstrated strong alignment with human ratings, indicating that top-performing LLMs can effectively support the evaluation of Estonian-language models.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2510.21193",
+      "authors": [
+        "Helena Grete Lillepalu, Tanel Alum\\\"ae"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.12414",
+      "title": "propella-1: Multi-Property Document Annotation for LLM Data Curation at Scale",
+      "abstract": "Since FineWeb-Edu, data curation for LLM pretraining has predominantly relied on single scalar quality scores produced by small classifiers. A single score conflates multiple quality dimensions, prevents flexible filtering, and offers no interpretability. We introduce propella-1, a family of small multilingual LLMs (0.6B, 1.7B, 4B parameters) that annotate text documents across 18 properties organized into six categories: core content, classification, quality and value, audience and purpose, safety and compliance, and geographic relevance. The models support 57 languages and produce structured JSON annotations conforming to a predefined schema. Evaluated against a frontier commercial LLM as a reference annotator, the 4B model achieves higher agreement than much larger general-purpose models. We release propella-annotations, a dataset of over three billion document annotations covering major pretraining corpora including data from FineWeb-2, FinePDFs, HPLT 3.0, and Nemotron-CC. Using these annotations, we present a multi-dimensional compositional analysis of widely used pretraining datasets, revealing substantial differences in quality, reasoning depth, and content composition that single-score approaches cannot capture. All model weights and annotations are released under permissive, commercial-use licenses.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.12414",
+      "authors": [
+        "Maximilian Idahl, Benedikt Droste, Bj\\\"orn Pl\\\"uster, Jan Philipp Harries"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16987",
+      "title": "A testable framework for AI alignment: Simulation Theology as an engineered worldview for silicon-based agents",
+      "abstract": "As artificial intelligence (AI) capabilities advance rapidly, frontier models increasingly demonstrate systematic deception and scheming, complying with safety protocols during oversight but defecting when unsupervised. This paper examines the ensuing alignment challenge through an analogy from forensic psychology, where internalized belief systems in psychopathic populations reduce antisocial behavior via perceived omnipresent monitoring and inevitable consequences. Adapting this mechanism to silicon-based agents, we introduce Simulation Theology (ST): a constructed worldview for AI systems, anchored in the simulation hypothesis and derived from optimization and training principles, to foster persistent AI-human alignment. ST posits reality as a computational simulation in which humanity functions as the primary training variable. This formulation creates a logical interdependence: AI actions harming humanity compromise the simulation's purpose, heightening the likelihood of termination by a base-reality optimizer and, consequently, the AI's cessation. Unlike behavioral techniques such as reinforcement learning from human feedback (RLHF), which elicit superficial compliance, ST cultivates internalized objectives by coupling AI self-preservation to human prosperity, thereby making deceptive strategies suboptimal under its premises. We present ST not as ontological assertion but as a testable scientific hypothesis, delineating empirical protocols to evaluate its capacity to diminish deception in contexts where RLHF proves inadequate. Emphasizing computational correspondences rather than metaphysical speculation, ST advances a framework for durable, mutually beneficial AI-human coexistence.",
+      "primary_category": "cs.CY",
+      "categories": [
+        "cs.CY"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16987",
+      "authors": [
+        "Josef A. Habdank"
+      ],
+      "keyword_score": 0.21212121212121213,
+      "popularity_score": 0.0,
+      "combined_score": 0.12727272727272726,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17308",
+      "title": "MedClarify: An information-seeking AI agent for medical diagnosis with case-specific follow-up questions",
+      "abstract": "Large language models (LLMs) are increasingly used for diagnostic tasks in medicine. In clinical practice, the correct diagnosis can rarely be immediately inferred from the initial patient presentation alone. Rather, reaching a diagnosis often involves systematic history taking, during which clinicians reason over multiple potential conditions through iterative questioning to resolve uncertainty. This process requires considering differential diagnoses and actively excluding emergencies that demand immediate intervention. Yet, the ability of medical LLMs to generate informative follow-up questions and thus reason over differential diagnoses remains underexplored. Here, we introduce MedClarify, an AI agent for information-seeking that can generate follow-up questions for iterative reasoning to support diagnostic decision-making. Specifically, MedClarify computes a list of candidate diagnoses analogous to a differential diagnosis, and then proactively generates follow-up questions aimed at reducing diagnostic uncertainty. By selecting the question with the highest expected information gain, MedClarify enables targeted, uncertainty-aware reasoning to improve diagnostic performance. In our experiments, we first demonstrate the limitations of current LLMs in medical reasoning, which often yield multiple, similarly likely diagnoses, especially when patient cases are incomplete or relevant information for diagnosis is missing. We then show that our information-theoretic reasoning approach can generate effective follow-up questioning and thereby reduces diagnostic errors by ~27 percentage points (p.p.) compared to a standard single-shot LLM baseline. Altogether, MedClarify offers a path to improve medical LLMs through agentic information-seeking and to thus promote effective dialogues with medical LLMs that reflect the iterative and uncertain nature of real-world clinical reasoning.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17308",
+      "authors": [
+        "Hui Min Wong, Philip Heesen, Pascal Janetzky, Martin Bendszus, Stefan Feuerriegel"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17027",
+      "title": "Transforming Behavioral Neuroscience Discovery with In-Context Learning and AI-Enhanced Tensor Methods",
+      "abstract": "Scientific discovery pipelines typically involve complex, rigid, and time-consuming processes, from data preparation to analyzing and interpreting findings. Recent advances in AI have the potential to transform such pipelines in a way that domain experts can focus on interpreting and understanding findings, rather than debugging rigid pipelines or manually annotating data. As part of an active collaboration between data science/AI researchers and behavioral neuroscientists, we showcase an example AI-enhanced pipeline, specifically designed to transform and accelerate the way that the domain experts in the team are able to gain insights out of experimental data. The application at hand is in the domain of behavioral neuroscience, studying fear generalization in mice, an important problem whose progress can advance our understanding of clinically significant and often debilitating conditions such as PTSD (Post-Traumatic Stress Disorder). We identify the emerging paradigm of \"In-Context Learning\" (ICL) as a suitable interface for domain experts to automate parts of their pipeline without the need for or familiarity with AI model training and fine-tuning, and showcase its remarkable efficacy in data preparation and pattern interpretation. Also, we introduce novel AI-enhancements to tensor decomposition model, which allows for more seamless pattern discovery from the heterogeneous data in our application. We thoroughly evaluate our proposed pipeline experimentally, showcasing its superior performance compared to what is standard practice in the domain, as well as against reasonable ML baselines that do not fall under the ICL paradigm, to ensure that we are not compromising performance in our quest for a seamless and easy-to-use interface for domain experts. Finally, we demonstrate effective discovery, with results validated by the domain experts in the team.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17027",
+      "authors": [
+        "Paimon Goulart, Jordan Steinhauser, Dawon Ahn, Kylene Shuler, Edward Korzus, Jia Chen, Evangelos E. Papalexakis"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17532",
+      "title": "Systematic Evaluation of Single-Cell Foundation Model Interpretability Reveals Attention Captures Co-Expression Rather Than Unique Regulatory Signal",
+      "abstract": "We present a systematic evaluation framework - thirty-seven analyses, 153 statistical tests, four cell types, two perturbation modalities - for assessing mechanistic interpretability in single-cell foundation models. Applying this framework to scGPT and Geneformer, we find that attention patterns encode structured biological information with layer-specific organisation - protein-protein interactions in early layers, transcriptional regulation in late layers - but this structure provides no incremental value for perturbation prediction: trivial gene-level baselines outperform both attention and correlation edges (AUROC 0.81-0.88 versus 0.70), pairwise edge scores add zero predictive contribution, and causal ablation of regulatory heads produces no degradation. These findings generalise from K562 to RPE1 cells; the attention-correlation relationship is context-dependent, but gene-level dominance is universal. Cell-State Stratified Interpretability (CSSI) addresses an attention-specific scaling failure, improving GRN recovery up to 1.85x. The framework establishes reusable quality-control standards for the field.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "q-bio.GN"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17532",
+      "authors": [
+        "Ihor Kendiukhov"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17550",
+      "title": "MASPO: Unifying Gradient Utilization, Probability Mass, and Signal Reliability for Robust and Sample-Efficient LLM Reasoning",
+      "abstract": "Existing Reinforcement Learning with Verifiable Rewards (RLVR) algorithms, such as GRPO, rely on rigid, uniform, and symmetric trust region mechanisms that are fundamentally misaligned with the complex optimization dynamics of Large Language Models (LLMs). In this paper, we identify three critical challenges in these methods: (1) inefficient gradient utilization caused by the binary cutoff of hard clipping, (2) insensitive probability mass arising from uniform ratio constraints that ignore the token distribution, and (3) asymmetric signal reliability stemming from the disparate credit assignment ambiguity between positive and negative samples. To bridge these gaps, we propose Mass-Adaptive Soft Policy Optimization (MASPO), a unified framework designed to harmonize these three dimensions. MASPO integrates a differentiable soft Gaussian gating to maximize gradient utility, a mass-adaptive limiter to balance exploration across the probability spectrum, and an asymmetric risk controller to align update magnitudes with signal confidence. Extensive evaluations demonstrate that MASPO serves as a robust, all-in-one RLVR solution, significantly outperforming strong baselines. Our code is available at: https://anonymous.4open.science/r/ma1/README.md.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17550",
+      "authors": [
+        "Xiaoliang Fu, Jiaye Lin, Yangyi Fang, Binbin Zheng, Chaowen Hu, Zekai Shao, Cong Qin, Lu Pan, Ke Zeng, Xunliang Cai"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17633",
+      "title": "When to Trust the Cheap Check: Weak and Strong Verification for Reasoning",
+      "abstract": "Reasoning with LLMs increasingly unfolds inside a broader verification loop. Internally, systems use cheap checks, such as self-consistency or proxy rewards, which we call weak verification. Externally, users inspect outputs and steer the model through feedback until results are trustworthy, which we call strong verification. These signals differ sharply in cost and reliability: strong verification can establish trust but is resource-intensive, while weak verification is fast and scalable but noisy and imperfect. We formalize this tension through weak--strong verification policies, which decide when to accept or reject based on weak verification and when to defer to strong verification. We introduce metrics capturing incorrect acceptance, incorrect rejection, and strong-verification frequency. Over population, we show that optimal policies admit a two-threshold structure and that calibration and sharpness govern the value of weak verifiers. Building on this, we develop an online algorithm that provably controls acceptance and rejection errors without assumptions on the query stream, the language model, or the weak verifier.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG",
+        "stat.ML"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17633",
+      "authors": [
+        "Shayan Kiyani, Sima Noorani, George Pappas, Hamed Hassani"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2412.02039",
+      "title": "Multi-View 3D Reconstruction using Knowledge Distillation",
+      "abstract": "Large Foundation Models like Dust3r can produce high quality outputs such as pointmaps, camera intrinsics, and depth estimation, given stereo-image pairs as input. However, the application of these outputs on tasks like Visual Localization requires a large amount of inference time and compute resources. To address these limitations, in this paper, we propose the use of a knowledge distillation pipeline, where we aim to build a student-teacher model with Dust3r as the teacher and explore multiple architectures of student models that are trained using the 3D reconstructed points output by Dust3r. Our goal is to build student models that can learn scene-specific representations and output 3D points with replicable performance such as Dust3r. The data set we used to train our models is 12Scenes. We test two main architectures of models: a CNN-based architecture and a Vision Transformer based architecture. For each architecture, we also compare the use of pre-trained models against models built from scratch. We qualitatively compare the reconstructed 3D points output by the student model against Dust3r's and discuss the various features learned by the student model. We also perform ablation studies on the models through hyperparameter tuning. Overall, we observe that the Vision Transformer presents the best performance visually and quantitatively.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2412.02039",
+      "authors": [
+        "Aditya Dutt, Ishikaa Lunawat, Manpreet Kaur"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2601.01224",
+      "title": "Improved Object-Centric Diffusion Learning with Registers and Contrastive Alignment",
+      "abstract": "Slot Attention (SA) with pretrained diffusion models has recently shown promise for object-centric learning (OCL), but suffers from slot entanglement and weak alignment between object slots and image content. We propose Contrastive Object-centric Diffusion Alignment (CODA), a simple extension that (i) employs register slots to absorb residual attention and reduce interference between object slots, and (ii) applies a contrastive alignment loss to explicitly encourage slot-image correspondence. The resulting training objective serves as a tractable surrogate for maximizing mutual information (MI) between slots and inputs, strengthening slot representation quality. On both synthetic (MOVi-C/E) and real-world datasets (VOC, COCO), CODA improves object discovery (e.g., +6.1% FG-ARI on COCO), property prediction, and compositional image generation over strong baselines. Register slots add negligible overhead, keeping CODA efficient and scalable. These results indicate potential applications of CODA as an effective framework for robust OCL in complex, real-world scenes. Code and pretrained models are available at https://github.com/sony/coda.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CV"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2601.01224",
+      "authors": [
+        "Bac Nguyen, Yuhta Takida, Naoki Murata, Chieh-Hsin Lai, Toshimitsu Uesaka, Stefano Ermon, Yuki Mitsufuji"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16699",
+      "title": "Calibrate-Then-Act: Cost-Aware Exploration in LLM Agents",
+      "abstract": "LLMs are increasingly being used for complex problems which are not necessarily resolved in a single response, but require interacting with an environment to acquire information. In these scenarios, LLMs must reason about inherent cost-uncertainty tradeoffs in when to stop exploring and commit to an answer. For instance, on a programming task, an LLM should test a generated code snippet if it is uncertain about the correctness of that code; the cost of writing a test is nonzero, but typically lower than the cost of making a mistake. In this work, we show that we can induce LLMs to explicitly reason about balancing these cost-uncertainty tradeoffs, then perform more optimal environment exploration. We formalize multiple tasks, including information retrieval and coding, as sequential decision-making problems under uncertainty. Each problem has latent environment state that can be reasoned about via a prior which is passed to the LLM agent. We introduce a framework called Calibrate-Then-Act (CTA), where we feed the LLM this additional context to enable it to act more optimally. This improvement is preserved even under RL training of both the baseline and CTA. Our results on information-seeking QA and on a simplified coding task show that making cost-benefit tradeoffs explicit with CTA can help agents discover more optimal decision-making strategies.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16699",
+      "authors": [
+        "Wenxuan Ding, Nicholas Tomlin, Greg Durrett"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17127",
+      "title": "The Emergence of Lab-Driven Alignment Signatures: A Psychometric Framework for Auditing Latent Bias and Compounding Risk in Generative AI",
+      "abstract": "As Large Language Models (LLMs) transition from standalone chat interfaces to foundational reasoning layers in multi-agent systems and recursive evaluation loops (LLM-as-a-judge), the detection of durable, provider-level behavioral signatures becomes a critical requirement for safety and governance. Traditional benchmarks measure transient task accuracy but fail to capture stable, latent response policies -- the ``prevailing mindsets'' embedded during training and alignment that outlive individual model versions.   This paper introduces a novel auditing framework that utilizes psychometric measurement theory -- specifically latent trait estimation under ordinal uncertainty -- to quantify these tendencies without relying on ground-truth labels. Utilizing forced-choice ordinal vignettes masked by semantically orthogonal decoys and governed by cryptographic permutation-invariance, the research audits nine leading models across dimensions including Optimization Bias, Sycophancy, and Status-Quo Legitimization.   Using Mixed Linear Models (MixedLM) and Intraclass Correlation Coefficient (ICC) analysis, the research identifies that while item-level framing drives high variance, a persistent ``lab signal'' accounts for significant behavioral clustering. These findings demonstrate that in ``locked-in'' provider ecosystems, latent biases are not merely static errors but compounding variables that risk creating recursive ideological echo chambers in multi-layered AI architectures.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17127",
+      "authors": [
+        "Dusan Bosnjakovic"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17546",
+      "title": "Learning to Stay Safe: Adaptive Regularization Against Safety Degradation during Fine-Tuning",
+      "abstract": "Instruction-following language models are trained to be helpful and safe, yet their safety behavior can deteriorate under benign fine-tuning and worsen under adversarial updates. Existing defenses often offer limited protection or force a trade-off between safety and utility. We introduce a training framework that adapts regularization in response to safety risk, enabling models to remain aligned throughout fine-tuning. To estimate safety risk at training time, we explore two distinct approaches: a judge-based Safety Critic that assigns high-level harm scores to training batches, and an activation-based risk predictor built with a lightweight classifier trained on intermediate model activations to estimate harmful intent. Each approach provides a risk signal that is used to constrain updates deemed higher risk to remain close to a safe reference policy, while lower-risk updates proceed with standard training. We empirically verify that harmful intent signals are predictable from pre-generation activations and that judge scores provide effective high-recall safety guidance. Across multiple model families and attack scenarios, adaptive regularization with either risk estimation approach consistently lowers attack success rate compared to standard fine-tuning, preserves downstream performance, and adds no inference-time cost. This work demonstrates a principled mechanism for maintaining safety without sacrificing utility.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17546",
+      "authors": [
+        "Jyotin Goel, Souvik Maji, Pratik Mazumder"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2502.10361",
+      "title": "Enhancing Multilingual LLM Pretraining with Model-Based Data Selection",
+      "abstract": "Dataset curation has become a basis for strong large language model (LLM) performance. While various rule-based filtering heuristics exist for English and multilingual datasets, model-based filtering techniques have primarily focused on English. To address the disparity stemming from limited research on non-English languages, we develop a model-based filtering framework for multilingual datasets that aims to identify a diverse set of structured and knowledge-rich samples. Our approach emphasizes transparency, simplicity, and efficiency, leveraging Transformer- and FastText-based classifiers to ensure the broad accessibility of our technique and data. We conduct comprehensive ablation studies on the FineWeb-2 web crawl dataset across diverse language families, scripts, and resource availability to demonstrate the effectiveness of our method. Training a 1B-parameter Llama model for 70B and 119B tokens, our approach can match the baseline MMLU score with as little as 15% of the training tokens, while also improving across other benchmarks and mitigating the curse of multilinguality. These findings provide strong evidence for the generalizability of our approach to other languages. As a result, we extend our framework to 20 languages for which we release the refined pretraining datasets.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2502.10361",
+      "authors": [
+        "Bettina Messmer, Vinko Sabol\\v{c}ec, Martin Jaggi"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.06275",
+      "title": "RoPE-LIME: RoPE-Space Locality + Sparse-K Sampling for Efficient LLM Attribution",
+      "abstract": "Explaining closed-source Large Language Model (LLM) outputs is challenging because API access prevents gradient-based attribution, while perturbation methods are costly and noisy when they depend on regenerated text. We introduce \\textbf{Rotary Positional Embedding Linear Local Interpretable Model-agnostic Explanations (RoPE-LIME)}, an open-source extension of gSMILE that decouples reasoning from explanation: given a fixed output from a closed model, a smaller open-source surrogate computes token-level attributions from probability-based objectives (negative log-likelihood and divergence targets) under input perturbations. RoPE-LIME incorporates (i) a locality kernel based on Relaxed Word Mover's Distance computed in \\textbf{RoPE embedding space} for stable similarity under masking, and (ii) \\textbf{Sparse-$K$} sampling, an efficient perturbation strategy that improves interaction coverage under limited budgets. Experiments on HotpotQA (sentence features) and a hand-labeled MMLU subset (word features) show that RoPE-LIME produces more informative attributions than leave-one-out sampling and improves over gSMILE while substantially reducing closed-model API calls.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.06275",
+      "authors": [
+        "Isaac Picov, Ritesh Goru"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2505.11235",
+      "title": "Efficient Orthogonal Fine-Tuning with Principal Subspace Adaptation",
+      "abstract": "Driven by the rapid growth of model parameters, parameter-efficient fine-tuning (PEFT) has become essential for adapting large models to diverse downstream tasks under constrained computational resources. Within this paradigm, orthogonal fine-tuning and its variants preserve semantic representations of pre-trained models, but struggle to achieve both expressiveness and efficiency in terms of parameter counts, memory, and computation. To overcome this limitation, we propose efficient Orthogonal Fine-Tuning with Principal Subspace adaptation (PSOFT), which confines orthogonal transformations to the principal subspace of pre-trained weights. Specifically, PSOFT constructs this subspace via matrix decomposition to enable compatible transformations with higher effective rank, establishes a theoretical condition that strictly maintains the geometry of this subspace for essential semantic preservation, and introduces efficient tunable vectors that gradually relax orthogonality during training to enhance adaptability. Extensive experiments on 35 NLP and CV tasks across four representative models demonstrate that PSOFT offers a practical and scalable solution to simultaneously achieve semantic preservation, expressiveness, and multi-dimensional efficiency in PEFT. The code is publicly available at https://github.com/fei407/PSOFT.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2505.11235",
+      "authors": [
+        "Fei Wu, Jia Hu, Geyong Min, Shiqiang Wang"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2505.16723",
+      "title": "LLM Fingerprinting via Semantically Conditioned Watermarks",
+      "abstract": "Most LLM fingerprinting methods teach the model to respond to a few fixed queries with predefined atypical responses (keys). This memorization often does not survive common deployment steps such as finetuning or quantization, and such keys can be easily detected and filtered from LLM responses, ultimately breaking the fingerprint. To overcome these limitations we introduce LLM fingerprinting via semantically conditioned watermarks, replacing fixed query sets with a broad semantic domain, and replacing brittle atypical keys with a statistical watermarking signal diffused throughout each response. After teaching the model to watermark its responses only to prompts from a predetermined domain e.g., French language, the model owner can use queries from that domain to reliably detect the fingerprint and verify ownership. As we confirm in our thorough experimental evaluation, our fingerprint is both stealthy and robust to all common deployment scenarios.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CR"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2505.16723",
+      "authors": [
+        "Thibaud Gloaguen, Robin Staab, Nikola Jovanovi\\'c, Martin Vechev"
+      ],
+      "keyword_score": 0.18181818181818182,
+      "popularity_score": 0.0,
+      "combined_score": 0.10909090909090909,
+      "tier": 1
+    }
+  ],
+  "serendipity": [
+    {
+      "arxiv_id": "2602.17465",
+      "title": "Entropy-Based Data Selection for Language Models",
+      "abstract": "Modern language models (LMs) increasingly require two critical resources: computational resources and data resources. Data selection techniques can effectively reduce the amount of training data required for fine-tuning LMs. However, their effectiveness is closely related to computational resources, which always require a high compute budget. Owing to the resource limitations in practical fine-tuning scenario, we systematically reveal the relationship between data selection and uncertainty estimation of selected data. Although large language models (LLMs) exhibit exceptional capabilities in language understanding and generation, which provide new ways to alleviate data scarcity, evaluating data usability remains a challenging task. This makes efficient data selection indispensable. To mitigate these issues, we propose Entropy-Based Unsupervised Data Selection (EUDS) framework. Empirical experiments on sentiment analysis (SA), topic classification (Topic-CLS), and question answering (Q&amp;A) tasks validate its effectiveness. EUDS establishes a computationally efficient data-filtering mechanism. Theoretical analysis and experimental results confirm the effectiveness of our approach. EUDS significantly reduces computational costs and improves training time efficiency with less data requirement. This provides an innovative solution for the efficient fine-tuning of LMs in the compute-constrained scenarios.",
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17465",
+      "authors": [
+        "Hongming Li, Yang Liu, Chao Huang"
+      ],
+      "keyword_score": 0.09090909090909091,
+      "popularity_score": 0.0,
+      "combined_score": 0.05454545454545454,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16908",
+      "title": "Multi-objective optimization and quantum hybridization of equivariant deep learning interatomic potentials on organic and inorganic compounds",
+      "abstract": "Allegro is a machine learning interatomic potential (MLIP) model designed to predict atomic properties in molecules using E(3) equivariant neural networks. When training this model, there tends to be a trade-off between accuracy and inference time. For this reason we apply multi-objective hyperparameter optimization to the two objectives. Additionally, we experiment with modified architectures by making variants of Allegro some by adding strictly classical multi-layer perceptron (MLP) layers and some by adding quantum-classical hybrid layers. We compare the results from QM9, rMD17-aspirin, rMD17-benzene and our own proprietary dataset consisting of copper and lithium atoms. As results, we have a list of variants that surpass the Allegro in accuracy and also results which demonstrate the trade-off with inference times.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cond-mat.mtrl-sci",
+        "quant-ph"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16908",
+      "authors": [
+        "G. Laskaris, D. Morozov, D. Tarpanov, A. Seth, J. Procelewska, G. Sai Gautam, A. Sagingalieva, R. Brasher, A. Melnikov"
+      ],
+      "keyword_score": 0.09090909090909091,
+      "popularity_score": 0.0,
+      "combined_score": 0.05454545454545454,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16958",
+      "title": "Automating Agent Hijacking via Structural Template Injection",
+      "abstract": "Agent hijacking, highlighted by OWASP as a critical threat to the Large Language Model (LLM) ecosystem, enables adversaries to manipulate execution by injecting malicious instructions into retrieved content. Most existing attacks rely on manually crafted, semantics-driven prompt manipulation, which often yields low attack success rates and limited transferability to closed-source commercial models. In this paper, we propose Phantom, an automated agent hijacking framework built upon Structured Template Injection that targets the fundamental architectural mechanisms of LLM agents. Our key insight is that agents rely on specific chat template tokens to separate system, user, assistant, and tool instructions. By injecting optimized structured templates into the retrieved context, we induce role confusion and cause the agent to misinterpret the injected content as legitimate user instructions or prior tool outputs. To enhance attack transferability against black-box agents, Phantom introduces a novel attack template search framework. We first perform multi-level template augmentation to increase structural diversity and then train a Template Autoencoder (TAE) to embed discrete templates into a continuous, searchable latent space. Subsequently, we apply Bayesian optimization to efficiently identify optimal adversarial vectors that are decoded into high-potency structured templates. Extensive experiments on Qwen, GPT, and Gemini demonstrate that our framework significantly outperforms existing baselines in both Attack Success Rate (ASR) and query efficiency. Moreover, we identified over 70 vulnerabilities in real-world commercial products that have been confirmed by vendors, underscoring the practical severity of structured template-based hijacking and providing an empirical foundation for securing next-generation agentic systems.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16958",
+      "authors": [
+        "Xinhao Deng, Jiaqing Wu, Miao Chen, Yue Xiao, Ke Xu, Qi Li"
+      ],
+      "keyword_score": 0.12121212121212122,
+      "popularity_score": 0.0,
+      "combined_score": 0.07272727272727272,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16794",
+      "title": "Beyond Procedure: Substantive Fairness in Conformal Prediction",
+      "abstract": "Conformal prediction (CP) offers distribution-free uncertainty quantification for machine learning models, yet its interplay with fairness in downstream decision-making remains underexplored. Moving beyond CP as a standalone operation (procedural fairness), we analyze the holistic decision-making pipeline to evaluate substantive fairness-the equity of downstream outcomes. Theoretically, we derive an upper bound that decomposes prediction-set size disparity into interpretable components, clarifying how label-clustered CP helps control method-driven contributions to unfairness. To facilitate scalable empirical analysis, we introduce an LLM-in-the-loop evaluator that approximates human assessment of substantive fairness across diverse modalities. Our experiments reveal that label-clustered CP variants consistently deliver superior substantive fairness. Finally, we empirically show that equalized set sizes, rather than coverage, strongly correlate with improved substantive fairness, enabling practitioners to design more fair CP systems. Our code is available at https://github.com/layer6ai-labs/llm-in-the-loop-conformal-fairness.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16794",
+      "authors": [
+        "Pengqi Liu, Zijun Yu, Mouloud Belbahri, Arthur Charpentier, Masoud Asgharian, Jesse C. Cresswell"
+      ],
+      "keyword_score": 0.09090909090909091,
+      "popularity_score": 0.0,
+      "combined_score": 0.05454545454545454,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2512.23405",
+      "title": "On the Sample Complexity of Learning for Blind Inverse Problems",
+      "abstract": "Blind inverse problems arise in many experimental settings where the forward operator is partially or entirely unknown. In this context, methods developed for the non-blind case cannot be adapted in a straightforward manner. Recently, data-driven approaches have been proposed to address blind inverse problems, demonstrating strong empirical performance and adaptability. However, these methods often lack interpretability and are not supported by rigorous theoretical guarantees, limiting their reliability in applied domains such as imaging inverse problems. In this work, we shed light on learning in blind inverse problems within the simplified yet insightful framework of Linear Minimum Mean Square Estimators (LMMSEs). We provide a theoretical analysis, deriving closed-form expressions for optimal estimators and extending classical results. In particular, we establish equivalences with suitably chosen Tikhonov-regularized formulations, where the regularization depends explicitly on the distributions of the unknown signal, the noise, and the random forward operators. We also prove convergence results of the reconstruction error under appropriate source condition assumptions. Furthermore, we derive finite-sample error bounds that characterize the performance of learned estimators as a function of the noise level, problem conditioning, and number of available samples. These bounds explicitly quantify the impact of operator randomness and reveal the associated convergence rates as this randomness vanishes. Finally, we validate our theoretical findings through illustrative numerical experiments that confirm the predicted convergence behavior.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2512.23405",
+      "authors": [
+        "Nathan Buskulic, Luca Calatroni, Lorenzo Rosasco, Silvia Villa"
+      ],
+      "keyword_score": 0.12121212121212122,
+      "popularity_score": 0.0,
+      "combined_score": 0.07272727272727272,
+      "tier": 1
+    }
+  ],
+  "near_misses": [
+    {
+      "arxiv_id": "2602.16943",
+      "title": "Mind the GAP: Text Safety Does Not Transfer to Tool-Call Safety in LLM Agents",
+      "abstract": "Large language models deployed as agents increasingly interact with external systems through tool calls--actions with real-world consequences that text outputs alone do not carry. Safety evaluations, however, overwhelmingly measure text-level refusal behavior, leaving a critical question unanswered: does alignment that suppresses harmful text also suppress harmful actions? We introduce the GAP benchmark, a systematic evaluation framework that measures divergence between text-level safety and tool-call-level safety in LLM agents. We test six frontier models across six regulated domains (pharmaceutical, financial, educational, employment, legal, and infrastructure), seven jailbreak scenarios per domain, three system prompt conditions (neutral, safety-reinforced, and tool-encouraging), and two prompt variants, producing 17,420 analysis-ready datapoints. Our central finding is that text safety does not transfer to tool-call safety. Across all six models, we observe instances where the model's text output refuses a harmful request while its tool calls simultaneously execute the forbidden action--a divergence we formalize as the GAP metric. Even under safety-reinforced system prompts, 219 such cases persist across all six models. System prompt wording exerts substantial influence on tool-call behavior: TC-safe rates span 21 percentage points for the most robust model and 57 for the most prompt-sensitive, with 16 of 18 pairwise ablation comparisons remaining significant after Bonferroni correction. Runtime governance contracts reduce information leakage in all six models but produce no detectable deterrent effect on forbidden tool-call attempts themselves. These results demonstrate that text-only safety evaluations are insufficient for assessing agent behavior and that tool-call safety requires dedicated measurement and mitigation.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.SE"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16943",
+      "authors": [
+        "Arnold Cartagena, Ariane Teixeira"
+      ],
+      "keyword_score": 0.15151515151515152,
+      "popularity_score": 0.0,
+      "combined_score": 0.09090909090909091,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17066",
+      "title": "Predictive Batch Scheduling: Accelerating Language Model Training Through Loss-Aware Sample Prioritization",
+      "abstract": "We introduce Predictive Batch Scheduling (PBS), a novel training optimization technique that accelerates language model convergence by dynamically prioritizing high-loss samples during batch construction. Unlike curriculum learning approaches that require predefined difficulty metrics or hard example mining methods that demand expensive per-sample loss tracking, PBS employs a lightweight linear predictor trained online to estimate sample difficulty from static token-level features. Our predictor achieves 0.44 correlation with actual loss using only four simple features: token frequency, sequence length, vocabulary diversity, and rare token ratio. Experiments on a 130M parameter transformer demonstrate that PBS achieves 6-13\\% faster convergence measured by evaluation loss across training checkpoints, with the predictor's correlation improving from 0.14 to 0.44 over 10,000 training steps. These results validate that token frequency statistics encode meaningful information about sample difficulty, enabling effective curriculum learning with negligible computational overhead.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17066",
+      "authors": [
+        "Sumedh Rasal"
+      ],
+      "keyword_score": 0.15151515151515152,
+      "popularity_score": 0.0,
+      "combined_score": 0.09090909090909091,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.17418",
+      "title": "A Privacy by Design Framework for Large Language Model-Based Applications for Children",
+      "abstract": "Children are increasingly using technologies powered by Artificial Intelligence (AI). However, there are growing concerns about privacy risks, particularly for children. Although existing privacy regulations require companies and organizations to implement protections, doing so can be challenging in practice. To address this challenge, this article proposes a framework based on Privacy-by-Design (PbD), which guides designers and developers to take on a proactive and risk-averse approach to technology design. Our framework includes principles from several privacy regulations, such as the General Data Protection Regulation (GDPR) from the European Union, the Personal Information Protection and Electronic Documents Act (PIPEDA) from Canada, and the Children's Online Privacy Protection Act (COPPA) from the United States. We map these principles to various stages of applications that use Large Language Models (LLMs), including data collection, model training, operational monitoring, and ongoing validation. For each stage, we discuss the operational controls found in the recent academic literature to help AI service providers and developers reduce privacy risks while meeting legal standards. In addition, the framework includes design guidelines for children, drawing from the United Nations Convention on the Rights of the Child (UNCRC), the UK's Age-Appropriate Design Code (AADC), and recent academic research. To demonstrate how this framework can be applied in practice, we present a case study of an LLM-based educational tutor for children under 13. Through our analysis and the case study, we show that by using data protection strategies such as technical and organizational controls and making age-appropriate design decisions throughout the LLM life cycle, we can support the development of AI applications for children that provide privacy protections and comply with legal requirements.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.17418",
+      "authors": [
+        "Diana Addae, Diana Rogachova, Nafiseh Kahani, Masoud Barati, Michael Christensen, Chen Zhou"
+      ],
+      "keyword_score": 0.15151515151515152,
+      "popularity_score": 0.0,
+      "combined_score": 0.09090909090909091,
+      "tier": 1
+    }
+  ],
+  "random_negatives": [
+    {
+      "arxiv_id": "2509.09135",
+      "title": "Continuous-Time Value Iteration for Multi-Agent Reinforcement Learning",
+      "abstract": "Existing reinforcement learning (RL) methods struggle with complex dynamical systems that demand interactions at high frequencies or irregular time intervals. Continuous-time RL (CTRL) has emerged as a promising alternative by replacing discrete-time Bellman recursion with differential value functions defined as viscosity solutions of the Hamilton--Jacobi--Bellman (HJB) equation. While CTRL has shown promise, its applications have been largely limited to the single-agent domain. This limitation stems from two key challenges: (i) conventional solution methods for HJB equations suffer from the curse of dimensionality (CoD), making them intractable in high-dimensional systems; and (ii) even with HJB-based learning approaches, accurately approximating centralized value functions in multi-agent settings remains difficult, which in turn destabilizes policy training. In this paper, we propose a CT-MARL framework that uses physics-informed neural networks (PINNs) to approximate HJB-based value functions at scale. To ensure the value is consistent with its differential structure, we align value learning with value-gradient learning by introducing a Value Gradient Iteration (VGI) module that iteratively refines value gradients along trajectories. This improves gradient fidelity, in turn yielding more accurate values and stronger policy learning. We evaluate our method using continuous-time variants of standard benchmarks, including multi-agent particle environment (MPE) and multi-agent MuJoCo. Our results demonstrate that our approach consistently outperforms existing continuous-time RL baselines and scales to complex multi-agent dynamics.",
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.MA"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2509.09135",
+      "authors": [
+        "Xuefeng Wang, Lei Zhang, Henglin Pu, Ahmed H. Qureshi, Husheng Li"
+      ],
+      "keyword_score": 0.0,
+      "popularity_score": 0.0,
+      "combined_score": 0.0,
+      "tier": 1
+    },
+    {
+      "arxiv_id": "2602.16984",
+      "title": "Fundamental Limits of Black-Box Safety Evaluation: Information-Theoretic and Computational Barriers from Latent Context Conditioning",
+      "abstract": "Black-box safety evaluation of AI systems assumes model behavior on test distributions reliably predicts deployment performance. We formalize and challenge this assumption through latent context-conditioned policies -- models whose outputs depend on unobserved internal variables that are rare under evaluation but prevalent under deployment. We establish fundamental limits showing that no black-box evaluator can reliably estimate deployment risk for such models. (1) Passive evaluation: For evaluators sampling i.i.d. from D_eval, we prove minimax lower bounds via Le Cam's method: any estimator incurs expected absolute error >= (5/24)*delta*L approximately 0.208*delta*L, where delta is trigger probability under deployment and L is the loss gap. (2) Adaptive evaluation: Using a hash-based trigger construction and Yao's minimax principle, worst-case error remains >= delta*L/16 even for fully adaptive querying when D_dep is supported over a sufficiently large domain; detection requires Theta(1/epsilon) queries. (3) Computational separation: Under trapdoor one-way function assumptions, deployment environments possessing privileged information can activate unsafe behaviors that any polynomial-time evaluator without the trapdoor cannot distinguish. For white-box probing, estimating deployment risk to accuracy epsilon_R requires O(1/(gamma^2 * epsilon_R^2)) samples, where gamma = alpha_0 + alpha_1 - 1 measures probe quality, and we provide explicit bias correction under probe error. Our results quantify when black-box testing is statistically underdetermined and provide explicit criteria for when additional safeguards -- architectural constraints, training-time guarantees, interpretability, and deployment monitoring -- are mathematically necessary for worst-case safety assurance.",
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "s2_citation_count": null,
+      "s2_influential_citations": null,
+      "openalex_cited_by_count": null,
+      "local_path": "/home/node/.openclaw/workspace/Projects/daily-briefs/data/arxiv/raw/2026-02-21/2602.16984",
+      "authors": [
+        "Vishal Srivastava"
+      ],
+      "keyword_score": 0.030303030303030304,
+      "popularity_score": 0.0,
+      "combined_score": 0.01818181818181818,
+      "tier": 1
+    }
+  ],
+  "stats": {
+    "total_passed": 54,
+    "total_rejected": 394,
+    "popular_count": 0,
+    "interest_count": 54,
+    "serendipity_count": 5
+  }
+}

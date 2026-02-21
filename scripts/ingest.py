@@ -2,8 +2,10 @@
 """
 arXiv paper ingestion script.
 
-Downloads papers from arXiv API for specified categories and date range.
-Handles pagination, deduplication, and downloads PDF + source archives.
+Downloads papers from arXiv RSS feeds for specified categories.
+Handles deduplication and downloads PDF + source archives.
+
+RSS feeds are more reliable than API date queries for daily updates.
 """
 
 import argparse
@@ -13,7 +15,6 @@ import sqlite3
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlencode
 
 import feedparser
 import requests
@@ -23,13 +24,13 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
-# arXiv API base
-ARXIV_API = "https://export.arxiv.org/api/query"
+# arXiv endpoints
+ARXIV_RSS = "https://export.arxiv.org/rss/{}"
 ARXIV_PDF = "https://arxiv.org/pdf/{}.pdf"
 ARXIV_SOURCE = "https://arxiv.org/e-print/{}"
 
-# Rate limiting: arXiv asks for 3 second delay between requests
-RATE_LIMIT_SECONDS = 3
+# Rate limiting
+RATE_LIMIT_SECONDS = 1
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
@@ -46,117 +47,151 @@ def get_all_categories(config: dict) -> list:
     return cats
 
 
-def build_query(categories: list, date_str: str) -> str:
+def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
     """
-    Build arXiv API query for given categories and date.
+    Fetch papers from arXiv RSS feed for a category.
     
-    Date format: YYYYMMDD
-    Query format: (cat:cs.AI OR cat:cs.LG) AND submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]
+    Returns list of parsed entries.
     """
-    cat_query = " OR ".join(f"cat:{cat}" for cat in categories)
-    date_query = f"submittedDate:[{date_str}0000 TO {date_str}2359]"
-    return f"({cat_query}) AND {date_query}"
+    url = ARXIV_RSS.format(category)
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=30)
+            if response.status_code == 429:
+                wait_time = (2 ** attempt) * 5
+                console.print(f"[yellow]Rate limited on {category}. Waiting {wait_time}s...[/yellow]")
+                time.sleep(wait_time)
+                continue
+            response.raise_for_status()
+            
+            feed = feedparser.parse(response.content)
+            return feed.get("entries", [])
+            
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                wait_time = (2 ** attempt) * 2
+                console.print(f"[yellow]Error fetching {category}: {e}. Retrying in {wait_time}s...[/yellow]")
+                time.sleep(wait_time)
+            else:
+                console.print(f"[red]Failed to fetch {category} after {max_retries} attempts[/red]")
+                return []
+    
+    return []
 
 
-def fetch_arxiv_page(query: str, start: int = 0, max_results: int = 500) -> dict:
-    """
-    Fetch a single page of results from arXiv API.
+def extract_arxiv_id(entry: dict) -> str:
+    """Extract arXiv ID from entry link or id."""
+    # RSS entries have link like https://arxiv.org/abs/2602.16714
+    link = entry.get("link", entry.get("id", ""))
     
-    Returns parsed feed with entries.
-    """
-    params = {
-        "search_query": query,
-        "start": start,
-        "max_results": max_results,
-        "sortBy": "submittedDate",
-        "sortOrder": "ascending",
-    }
-    url = f"{ARXIV_API}?{urlencode(params)}"
+    # Extract ID from URL
+    if "/abs/" in link:
+        arxiv_id = link.split("/abs/")[-1]
+    elif "arxiv.org" in link:
+        arxiv_id = link.split("/")[-1]
+    else:
+        arxiv_id = link
     
-    response = requests.get(url, timeout=60)
-    response.raise_for_status()
+    # Remove version suffix if present
+    if "v" in arxiv_id and arxiv_id[-2] == "v":
+        arxiv_id = arxiv_id.rsplit("v", 1)[0]
     
-    return feedparser.parse(response.content)
+    return arxiv_id
 
 
-def parse_entry(entry: dict) -> dict:
-    """Parse a single arXiv entry into our metadata format."""
-    # Extract arXiv ID from entry.id (format: http://arxiv.org/abs/XXXX.XXXXX)
-    arxiv_id = entry.id.split("/abs/")[-1]
+def parse_entry(entry: dict, category: str) -> dict:
+    """Parse a single RSS entry into our metadata format."""
+    arxiv_id = extract_arxiv_id(entry)
     
-    # Handle versioned IDs (e.g., 2402.12345v1)
-    arxiv_id_base = arxiv_id.split("v")[0] if "v" in arxiv_id else arxiv_id
+    # Get description/abstract
+    description = entry.get("description", entry.get("summary", ""))
     
-    # Get all categories
-    categories = [tag.term for tag in entry.get("tags", [])]
-    primary_category = entry.get("arxiv_primary_category", {}).get("term", categories[0] if categories else "")
+    # Clean up description (remove "arXiv:... Announce Type: ..." prefix)
+    if "Abstract:" in description:
+        description = description.split("Abstract:", 1)[1].strip()
+    elif "Abstract" in description:
+        description = description.split("Abstract", 1)[1].strip()
     
-    # Get authors
-    authors = [author.get("name", "") for author in entry.get("authors", [])]
+    # Parse authors
+    authors = []
+    if "authors" in entry:
+        for author in entry.get("authors", []):
+            authors.append(author.get("name", str(author)))
+    elif "author" in entry:
+        authors = [entry["author"]]
+    elif "dc_creator" in entry:
+        # Some RSS feeds use dc:creator
+        creators = entry.get("dc_creator", "")
+        if isinstance(creators, str):
+            authors = [a.strip() for a in creators.split(",")]
+        else:
+            authors = creators
     
-    # Get links
-    links = {link.get("type", link.get("title", "unknown")): link.href for link in entry.get("links", [])}
-    pdf_url = links.get("application/pdf", f"https://arxiv.org/pdf/{arxiv_id_base}.pdf")
+    # Get categories from tags
+    categories = [category]  # Primary category from the feed we're fetching
+    for tag in entry.get("tags", []):
+        term = tag.get("term", str(tag))
+        if term and term not in categories:
+            categories.append(term)
+    
+    # Publication date
+    published = entry.get("published", entry.get("pubDate", ""))
     
     return {
-        "arxiv_id": arxiv_id_base,
-        "arxiv_id_versioned": arxiv_id,
+        "arxiv_id": arxiv_id,
         "title": entry.get("title", "").replace("\n", " ").strip(),
-        "abstract": entry.get("summary", "").replace("\n", " ").strip(),
+        "abstract": description.replace("\n", " ").strip(),
         "authors": authors,
-        "primary_category": primary_category,
+        "primary_category": category,
         "categories": categories,
-        "published": entry.get("published", ""),
-        "updated": entry.get("updated", ""),
+        "published": published,
+        "updated": entry.get("updated", published),
         "doi": entry.get("arxiv_doi", ""),
         "journal_ref": entry.get("arxiv_journal_ref", ""),
         "comment": entry.get("arxiv_comment", ""),
-        "pdf_url": pdf_url,
-        "abs_url": f"https://arxiv.org/abs/{arxiv_id_base}",
-        "source_url": f"https://arxiv.org/e-print/{arxiv_id_base}",
+        "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf",
+        "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
+        "source_url": f"https://arxiv.org/e-print/{arxiv_id}",
     }
 
 
-def fetch_all_papers(categories: list, date_str: str) -> list:
+def fetch_all_papers(categories: list) -> list:
     """
-    Fetch all papers for given categories and date with pagination.
+    Fetch all papers from RSS feeds for given categories.
     
     Returns deduplicated list of paper metadata.
     """
-    query = build_query(categories, date_str)
-    console.print(f"[bold]Query:[/bold] {query[:100]}...")
-    
     all_papers = {}
-    start = 0
-    page_size = 500
     
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
-        task = progress.add_task("Fetching papers...", total=None)
+        task = progress.add_task("Fetching categories...", total=len(categories))
         
-        while True:
-            progress.update(task, description=f"Fetching papers (offset {start})...")
+        for category in categories:
+            progress.update(task, description=f"Fetching {category}...")
             
-            feed = fetch_arxiv_page(query, start=start, max_results=page_size)
-            entries = feed.get("entries", [])
-            
-            if not entries:
-                break
+            entries = fetch_rss_feed(category)
             
             for entry in entries:
-                paper = parse_entry(entry)
-                # Deduplicate by arxiv_id (base, not versioned)
-                all_papers[paper["arxiv_id"]] = paper
+                paper = parse_entry(entry, category)
+                arxiv_id = paper["arxiv_id"]
+                
+                if arxiv_id in all_papers:
+                    # Merge categories if we've seen this paper before
+                    existing = all_papers[arxiv_id]
+                    for cat in paper["categories"]:
+                        if cat not in existing["categories"]:
+                            existing["categories"].append(cat)
+                else:
+                    all_papers[arxiv_id] = paper
             
-            console.print(f"  Fetched {len(entries)} papers (total unique: {len(all_papers)})")
+            console.print(f"  {category}: {len(entries)} papers (total unique: {len(all_papers)})")
             
-            if len(entries) < page_size:
-                break
-            
-            start += page_size
+            progress.advance(task)
             time.sleep(RATE_LIMIT_SECONDS)
     
     return list(all_papers.values())
@@ -274,29 +309,35 @@ def insert_paper(conn: sqlite3.Connection, paper: dict, local_path: str, ingest_
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Ingest arXiv papers")
-    parser.add_argument("--date", help="Date to ingest (YYYY-MM-DD). Default: yesterday")
+    parser = argparse.ArgumentParser(description="Ingest arXiv papers from RSS feeds")
+    parser.add_argument("--date", help="Date label for storage (YYYY-MM-DD). Default: today")
     parser.add_argument("--config", default="config.yaml", help="Config file path")
     parser.add_argument("--no-pdf", action="store_true", help="Skip PDF download")
     parser.add_argument("--no-source", action="store_true", help="Skip source download")
-    parser.add_argument("--overlap", action="store_true", help="Also fetch previous day (overlap for safety)")
+    parser.add_argument("--categories", help="Comma-separated list of categories (overrides config)")
+    parser.add_argument("--tier", type=int, choices=[1, 2, 3], help="Only fetch specific tier")
     args = parser.parse_args()
     
     # Determine date
     if args.date:
-        target_date = datetime.strptime(args.date, "%Y-%m-%d")
+        date_dir = args.date
     else:
-        target_date = datetime.now() - timedelta(days=1)
+        date_dir = datetime.now().strftime("%Y-%m-%d")
     
-    date_str = target_date.strftime("%Y%m%d")
-    date_dir = target_date.strftime("%Y-%m-%d")
-    
-    console.print(f"[bold green]arXiv Ingestion for {date_dir}[/bold green]")
+    console.print(f"[bold green]arXiv RSS Ingestion for {date_dir}[/bold green]")
     
     # Load config
     config = load_config(args.config)
-    categories = get_all_categories(config)
-    console.print(f"Categories: {len(categories)} total across all tiers")
+    
+    # Determine categories
+    if args.categories:
+        categories = [c.strip() for c in args.categories.split(",")]
+    elif args.tier:
+        categories = config["categories"].get(f"tier{args.tier}", [])
+    else:
+        categories = get_all_categories(config)
+    
+    console.print(f"Categories: {len(categories)} total")
     
     # Setup paths
     project_root = Path(__file__).parent.parent
@@ -307,24 +348,12 @@ def main():
     db_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Fetch papers
-    dates_to_fetch = [date_str]
-    if args.overlap:
-        prev_date = target_date - timedelta(days=1)
-        dates_to_fetch.append(prev_date.strftime("%Y%m%d"))
-    
-    all_papers = []
-    for d in dates_to_fetch:
-        papers = fetch_all_papers(categories, d)
-        all_papers.extend(papers)
-    
-    # Deduplicate again (in case of overlap)
-    papers_dict = {p["arxiv_id"]: p for p in all_papers}
-    papers = list(papers_dict.values())
+    papers = fetch_all_papers(categories)
     
     console.print(f"\n[bold]Total unique papers: {len(papers)}[/bold]")
     
     if not papers:
-        console.print("[yellow]No papers found for this date/categories.[/yellow]")
+        console.print("[yellow]No papers found.[/yellow]")
         return
     
     # Initialize database
