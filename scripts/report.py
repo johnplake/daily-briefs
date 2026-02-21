@@ -12,9 +12,20 @@ Each paper includes:
 
 import argparse
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 import yaml
 from rich.console import Console
@@ -250,12 +261,15 @@ def main():
     parser.add_argument("--output", help="Output report path (default: reports/YYYY-MM-DD.md)")
     args = parser.parse_args()
     
-    console.print(f"[bold green]Generating report for {args.date}[/bold green]")
+    # Validate date
+    target_date = validate_date(args.date)
+    
+    console.print(f"[bold green]Generating report for {target_date}[/bold green]")
     
     config = load_config(args.config)
     
-    input_path = Path(args.input) if args.input else PROJECT_ROOT / "data" / "filtered" / f"{args.date}.json"
-    output_path = Path(args.output) if args.output else PROJECT_ROOT / "reports" / f"{args.date}.md"
+    input_path = Path(args.input) if args.input else PROJECT_ROOT / "data" / "filtered" / f"{target_date}.json"
+    output_path = Path(args.output) if args.output else PROJECT_ROOT / "reports" / f"{target_date}.md"
     
     if not input_path.exists():
         console.print(f"[red]Filtered results not found: {input_path}[/red]")
@@ -263,7 +277,7 @@ def main():
         return
     
     results = load_filtered_results(input_path)
-    report = generate_report(results, args.date, config)
+    report = generate_report(results, target_date, config)
     
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:

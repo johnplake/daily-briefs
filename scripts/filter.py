@@ -18,7 +18,19 @@ import math
 import random
 import re
 import sqlite3
+import sys
+from datetime import datetime
 from pathlib import Path
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 import yaml
 from rich.console import Console
@@ -287,12 +299,15 @@ def main():
     parser.add_argument("--output", help="Output JSON path (default: data/filtered/YYYY-MM-DD.json)")
     args = parser.parse_args()
     
-    console.print(f"[bold green]Filtering papers for {args.date}[/bold green]")
+    # Validate date
+    target_date = validate_date(args.date)
+    
+    console.print(f"[bold green]Filtering papers for {target_date}[/bold green]")
     
     config = load_config(args.config)
     conn = get_db_connection()
     
-    papers = get_papers_for_date(conn, args.date)
+    papers = get_papers_for_date(conn, target_date)
     console.print(f"Papers to filter: {len(papers)}")
     
     if not papers:
@@ -306,7 +321,7 @@ def main():
     # Save results
     output_dir = PROJECT_ROOT / "data" / "filtered"
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = Path(args.output) if args.output else output_dir / f"{args.date}.json"
+    output_path = Path(args.output) if args.output else output_dir / f"{target_date}.json"
     
     save_filtered_results(results, output_path)
     console.print(f"\n[bold green]✓ Saved filtered results to {output_path}[/bold green]")

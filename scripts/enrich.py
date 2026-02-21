@@ -10,8 +10,20 @@ Can be re-run to update citation counts over time.
 
 import argparse
 import sqlite3
+import sys
 import time
+from datetime import datetime
 from pathlib import Path
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 import requests
 from rich.console import Console
@@ -133,10 +145,13 @@ def main():
     
     console.print("[bold green]Citation Enrichment[/bold green]")
     
+    # Validate date if provided
+    date_filter = validate_date(args.date) if args.date else None
+    
     conn = get_db_connection()
     
     # Get papers
-    papers = get_papers_to_enrich(conn, args.date, args.update, args.limit)
+    papers = get_papers_to_enrich(conn, date_filter, args.update, args.limit)
     
     console.print(f"Papers to enrich: {len(papers)}")
     

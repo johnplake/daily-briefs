@@ -14,8 +14,18 @@ Can be run via cron or manually.
 import argparse
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 from rich.console import Console
 
@@ -50,9 +60,9 @@ def main():
     parser.add_argument("--tier", type=int, choices=[1, 2, 3], help="Only process specific tier")
     args = parser.parse_args()
     
-    # Determine date
+    # Determine and validate date
     if args.date:
-        target_date = args.date
+        target_date = validate_date(args.date)
     else:
         target_date = datetime.now().strftime("%Y-%m-%d")
     

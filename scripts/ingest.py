@@ -12,9 +12,20 @@ import argparse
 import json
 import re
 import sqlite3
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 import feedparser
 import requests
@@ -384,7 +395,7 @@ def main():
     args = parser.parse_args()
     
     # Determine date
-    announced_date = args.date or datetime.now().strftime("%Y-%m-%d")
+    announced_date = validate_date(args.date) if args.date else datetime.now().strftime("%Y-%m-%d")
     
     console.print(f"[bold green]arXiv RSS Ingestion for {announced_date}[/bold green]")
     

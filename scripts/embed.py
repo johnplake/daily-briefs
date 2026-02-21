@@ -11,7 +11,19 @@ The embedding_idx column in the database maps papers to FAISS index positions.
 
 import argparse
 import sqlite3
+import sys
+from datetime import datetime
 from pathlib import Path
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 import faiss
 import numpy as np
@@ -135,11 +147,14 @@ def main():
         if index_path.exists():
             index_path.unlink()
     
+    # Validate date if provided
+    date_filter = validate_date(args.date) if args.date else None
+    
     # Get current index size (this will be the starting position for new embeddings)
     start_idx = get_current_index_size()
     
     # Get papers to embed
-    papers = get_papers_to_embed(conn, args.date, args.limit)
+    papers = get_papers_to_embed(conn, date_filter, args.limit)
     
     if not papers:
         console.print("[yellow]No papers need embedding.[/yellow]")
