@@ -20,7 +20,7 @@ from sentence_transformers import SentenceTransformer
 
 console = Console()
 
-MODEL_NAME = "allenai/specter2"
+MODEL_NAME = "sentence-transformers/allenai-specter"
 
 
 def load_index(index_dir: Path) -> tuple:

@@ -22,8 +22,8 @@ from sentence_transformers import SentenceTransformer
 
 console = Console()
 
-# SPECTER2 model for scientific papers
-MODEL_NAME = "allenai/specter2"
+# SPECTER model for scientific papers (sentence-transformers compatible)
+MODEL_NAME = "sentence-transformers/allenai-specter"
 EMBEDDING_DIM = 768
 
 
