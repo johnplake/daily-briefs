@@ -20,6 +20,7 @@ import re
 import sqlite3
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 from rich.console import Console
@@ -84,7 +85,7 @@ def get_tier(category: str, config: dict) -> int:
     return 0
 
 
-def compute_keyword_score(paper: dict, keywords: list) -> float:
+def compute_keyword_score(paper: dict[str, Any], keywords: list[str]) -> float:
     """
     Compute keyword match score for a paper.
     Simple TF-based scoring with title weighted higher than abstract.
@@ -106,7 +107,7 @@ def compute_keyword_score(paper: dict, keywords: list) -> float:
     return min(score, 1.0)
 
 
-def compute_popularity_score(paper: dict) -> float:
+def compute_popularity_score(paper: dict[str, Any]) -> float:
     """
     Compute popularity score based on citation metrics.
     For new papers, this will often be 0.
@@ -124,7 +125,7 @@ def compute_popularity_score(paper: dict) -> float:
     return min(score, 1.0)
 
 
-def compute_combined_score(paper: dict, config: dict) -> dict:
+def compute_combined_score(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     """
     Compute all scores for a paper.
     Returns dict with individual scores and combined score.
@@ -151,7 +152,7 @@ def compute_combined_score(paper: dict, config: dict) -> dict:
     }
 
 
-def filter_papers(papers: list, config: dict) -> dict:
+def filter_papers(papers: list[dict[str, Any]], config: dict[str, Any]) -> dict[str, Any]:
     """
     Filter papers into streams.
     
@@ -235,7 +236,7 @@ def filter_papers(papers: list, config: dict) -> dict:
     }
 
 
-def save_filtered_results(results: dict, output_path: Path):
+def save_filtered_results(results: dict[str, Any], output_path: Path) -> None:
     """Save filtered results to JSON."""
     output = {
         "popular": results["popular"],

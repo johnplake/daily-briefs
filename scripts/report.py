@@ -16,6 +16,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 import yaml
@@ -30,7 +31,7 @@ GITHUB_REPO = CONFIG.get("github", {}).get("repo", "johnplake/daily-briefs")
 MAX_AUTHORS = REPORT["max_authors"]
 
 
-def load_filtered_results(results_path: Path) -> dict:
+def load_filtered_results(results_path: Path) -> dict[str, Any]:
     """Load filtered results from JSON."""
     with open(results_path) as f:
         return json.load(f)
@@ -126,7 +127,7 @@ def format_authors(authors: list, max_authors: int = None) -> str:
         return ", ".join(names[:max_authors]) + f" et al. ({len(names)} authors)"
 
 
-def generate_report(results: dict, date: str, config: dict) -> str:
+def generate_report(results: dict[str, Any], date: str, config: dict[str, Any]) -> str:
     """Generate markdown report from filtered results."""
     report_config = config.get("report", {})
     max_per_stream = report_config.get("max_papers_per_stream", 10)

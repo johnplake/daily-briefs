@@ -12,6 +12,7 @@ import argparse
 import json
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 import faiss
 from rich.console import Console
@@ -79,7 +80,7 @@ def get_paper_by_id(conn: sqlite3.Connection, paper_id: str) -> dict | None:
 
 
 def search_by_query(query: str, model: SentenceTransformer, index: faiss.Index,
-                    conn: sqlite3.Connection, k: int = None) -> list:
+                    conn: sqlite3.Connection, k: int = None) -> list[dict[str, Any]]:
     """Search for papers matching a text query."""
     if k is None:
         k = DEFAULT_RESULTS
@@ -105,7 +106,7 @@ def search_by_query(query: str, model: SentenceTransformer, index: faiss.Index,
 
 
 def search_similar(paper_id: str, index: faiss.Index, conn: sqlite3.Connection,
-                   k: int = None) -> list:
+                   k: int = None) -> list[dict[str, Any]]:
     """Find papers similar to a given paper."""
     if k is None:
         k = DEFAULT_RESULTS

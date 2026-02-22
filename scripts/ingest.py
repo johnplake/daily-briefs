@@ -16,6 +16,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import feedparser
 import requests
@@ -107,7 +108,7 @@ def extract_arxiv_id(entry: dict) -> tuple[str, int]:
     return arxiv_id, version
 
 
-def parse_entry(entry: dict, category: str, announced_date: str) -> dict:
+def parse_entry(entry: dict[str, Any], category: str, announced_date: str) -> dict[str, Any]:
     """Parse a single RSS entry into our metadata format."""
     arxiv_id, version = extract_arxiv_id(entry)
     
@@ -257,7 +258,7 @@ def extract_text_from_pdf(pdf_path: Path) -> str | None:
         return None
 
 
-def download_and_extract_text(paper: dict) -> bool:
+def download_and_extract_text(paper: dict[str, Any]) -> bool:
     """
     Download PDF, extract text, save to file, delete PDF.
     Returns True if text was extracted successfully.
@@ -295,7 +296,7 @@ def download_and_extract_text(paper: dict) -> bool:
         return False
 
 
-def upsert_paper(conn: sqlite3.Connection, paper: dict, text_extracted: bool) -> tuple[str, bool]:
+def upsert_paper(conn: sqlite3.Connection, paper: dict[str, Any], text_extracted: bool) -> tuple[str, bool]:
     """
     Insert or update paper in database.
     
