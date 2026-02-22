@@ -19,12 +19,13 @@ from urllib.parse import quote
 import yaml
 from rich.console import Console
 
-from config import CONFIG, PROJECT_ROOT, FILTERED_DIR, REPORTS_DIR, validate_date
+from config import CONFIG, PROJECT_ROOT, FILTERED_DIR, REPORTS_DIR, REPORT, validate_date
 
 console = Console()
 
-# GitHub repo for feedback issues (from config)
+# Report settings from config
 GITHUB_REPO = CONFIG.get("github", {}).get("repo", "johnplake/daily-briefs")
+MAX_AUTHORS = REPORT["max_authors"]
 
 
 def load_filtered_results(results_path: Path) -> dict:
@@ -104,8 +105,10 @@ def generate_feedback_url(paper: dict, stream: str, date: str) -> str | None:
     return f"https://github.com/{GITHUB_REPO}/issues/new?title={issue_title}&body={issue_body}&labels=feedback"
 
 
-def format_authors(authors: list, max_authors: int = 3) -> str:
+def format_authors(authors: list, max_authors: int = None) -> str:
     """Format author list for display."""
+    if max_authors is None:
+        max_authors = MAX_AUTHORS
     if not authors:
         return "Unknown"
     

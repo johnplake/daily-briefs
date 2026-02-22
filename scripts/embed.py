@@ -22,7 +22,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from sentence_transformers import SentenceTransformer
 
-from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection, validate_date
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, EMBEDDINGS, get_db_connection, validate_date
 
 # Import UMAP functions from project.py
 from project import load_embeddings_and_ids, run_umap, update_coordinates
@@ -34,7 +34,7 @@ INDEX_DIR = EMBEDDINGS_DIR
 
 # SPECTER model for scientific papers
 MODEL_NAME = "sentence-transformers/allenai-specter"
-EMBEDDING_DIM = 768
+EMBEDDING_DIM = EMBEDDINGS["dimension"]
 
 
 def get_current_index_size() -> int:

@@ -144,7 +144,91 @@ def get_db_connection(config: dict = None) -> sqlite3.Connection:
     return conn
 
 
+# -----------------------------------------------------------------------------
+# HTTP Status Code Constants
+# -----------------------------------------------------------------------------
+HTTP_NOT_FOUND = 404
+HTTP_RATE_LIMITED = 429
+
+
+# -----------------------------------------------------------------------------
+# Config Accessors with Defaults
+# -----------------------------------------------------------------------------
+# These provide safe access to config values with sensible defaults.
+
+def get_filtering_config(config: dict = None) -> dict:
+    """Get filtering settings with defaults."""
+    if config is None:
+        config = CONFIG
+    filtering = config.get("filtering", {})
+    return {
+        "tier1_min_score": filtering.get("tier1_min_score", 0.1),
+        "tier2_min_score": filtering.get("tier2_min_score", 0.5),
+        "tier3_min_score": filtering.get("tier3_min_score", 0.8),
+        "citation_weight_s2": filtering.get("citation_weight_s2", 0.6),
+        "citation_weight_oa": filtering.get("citation_weight_oa", 0.4),
+        "keyword_weight": filtering.get("keyword_weight", 0.6),
+        "popularity_weight": filtering.get("popularity_weight", 0.4),
+        "near_miss_threshold": filtering.get("near_miss_threshold", 0.05),
+        "near_miss_count": filtering.get("near_miss_count", 3),
+        "serendipity_count": filtering.get("serendipity_count", 5),
+        "random_negative_count": filtering.get("random_negative_count", 2),
+    }
+
+
+def get_embeddings_config(config: dict = None) -> dict:
+    """Get embeddings/UMAP settings with defaults."""
+    if config is None:
+        config = CONFIG
+    embeddings = config.get("embeddings", {})
+    return {
+        "dimension": embeddings.get("dimension", 768),
+        "umap_n_neighbors": embeddings.get("umap_n_neighbors", 15),
+        "umap_min_dist": embeddings.get("umap_min_dist", 0.1),
+        "umap_random_state": embeddings.get("umap_random_state", 42),
+    }
+
+
+def get_search_config(config: dict = None) -> dict:
+    """Get search settings with defaults."""
+    if config is None:
+        config = CONFIG
+    search = config.get("search", {})
+    return {
+        "default_results": search.get("default_results", 10),
+    }
+
+
+def get_api_config(config: dict = None) -> dict:
+    """Get API settings with defaults."""
+    if config is None:
+        config = CONFIG
+    apis = config.get("apis", {})
+    return {
+        "arxiv_rate_limit": apis.get("arxiv", {}).get("rate_limit_seconds", 1.0),
+        "s2_enabled": apis.get("semantic_scholar", {}).get("enabled", True),
+        "s2_delay": apis.get("semantic_scholar", {}).get("delay_seconds", 0.15),
+        "oa_enabled": apis.get("openalex", {}).get("enabled", True),
+        "oa_delay": apis.get("openalex", {}).get("delay_seconds", 0.1),
+    }
+
+
+def get_report_config(config: dict = None) -> dict:
+    """Get report settings with defaults."""
+    if config is None:
+        config = CONFIG
+    report = config.get("report", {})
+    return {
+        "max_papers_per_stream": report.get("max_papers_per_stream", 10),
+        "max_authors": report.get("max_authors", 3),
+        "include_abstract_preview": report.get("include_abstract_preview", True),
+        "abstract_preview_length": report.get("abstract_preview_length", 300),
+    }
+
+
+# -----------------------------------------------------------------------------
 # Convenience: load config on import for simple access
+# -----------------------------------------------------------------------------
 # Scripts can use: from config import CONFIG, DB_PATH, get_db_connection
 CONFIG = load_config()
 PROJECT_ROOT = CONFIG["_resolved"]["root"]
@@ -154,3 +238,10 @@ EMBEDDINGS_DIR = CONFIG["_resolved"]["embeddings"]
 FILTERED_DIR = CONFIG["_resolved"]["filtered"]
 REPORTS_DIR = CONFIG["_resolved"]["reports"]
 LOGS_DIR = CONFIG["_resolved"]["logs"]
+
+# Pre-load commonly used configs
+FILTERING = get_filtering_config(CONFIG)
+EMBEDDINGS = get_embeddings_config(CONFIG)
+SEARCH = get_search_config(CONFIG)
+APIS = get_api_config(CONFIG)
+REPORT = get_report_config(CONFIG)

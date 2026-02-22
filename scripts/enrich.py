@@ -18,7 +18,11 @@ import requests
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from config import PROJECT_ROOT, DB_PATH, get_db_connection, validate_date
+from config import (
+    PROJECT_ROOT, DB_PATH, APIS,
+    HTTP_NOT_FOUND, HTTP_RATE_LIMITED,
+    get_db_connection, validate_date
+)
 
 console = Console()
 
@@ -26,9 +30,9 @@ console = Console()
 S2_API = "https://api.semanticscholar.org/graph/v1/paper"
 OPENALEX_API = "https://api.openalex.org/works"
 
-# Rate limits
-S2_DELAY = 0.15  # ~6-7 requests/second
-OPENALEX_DELAY = 0.1  # 10 requests/second
+# Rate limits (from config)
+S2_DELAY = APIS["s2_delay"]
+OPENALEX_DELAY = APIS["oa_delay"]
 
 
 def fetch_s2_citations(arxiv_id: str) -> int | None:
@@ -38,9 +42,9 @@ def fetch_s2_citations(arxiv_id: str) -> int | None:
     
     try:
         response = requests.get(url, params=params, timeout=30)
-        if response.status_code == 404:
+        if response.status_code == HTTP_NOT_FOUND:
             return None
-        if response.status_code == 429:
+        if response.status_code == HTTP_RATE_LIMITED:
             console.print(f"[yellow]S2 rate limited, waiting...[/yellow]")
             time.sleep(5)
             return None
@@ -58,7 +62,7 @@ def fetch_openalex_citations(arxiv_id: str) -> int | None:
     
     try:
         response = requests.get(url, timeout=30)
-        if response.status_code == 404:
+        if response.status_code == HTTP_NOT_FOUND:
             return None
         response.raise_for_status()
         data = response.json()

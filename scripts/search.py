@@ -18,12 +18,15 @@ from rich.console import Console
 from rich.table import Table
 from sentence_transformers import SentenceTransformer
 
-from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, SEARCH, get_db_connection
 
 console = Console()
 
 # Use EMBEDDINGS_DIR from config
 INDEX_DIR = EMBEDDINGS_DIR
+
+# Search defaults from config
+DEFAULT_RESULTS = SEARCH["default_results"]
 
 MODEL_NAME = "sentence-transformers/allenai-specter"
 
@@ -70,8 +73,10 @@ def get_paper_by_id(conn: sqlite3.Connection, paper_id: str) -> dict | None:
 
 
 def search_by_query(query: str, model: SentenceTransformer, index: faiss.Index,
-                    conn: sqlite3.Connection, k: int = 10) -> list:
+                    conn: sqlite3.Connection, k: int = None) -> list:
     """Search for papers matching a text query."""
+    if k is None:
+        k = DEFAULT_RESULTS
     # Encode query
     query_embedding = model.encode([query]).astype('float32')
     faiss.normalize_L2(query_embedding)
@@ -94,8 +99,10 @@ def search_by_query(query: str, model: SentenceTransformer, index: faiss.Index,
 
 
 def search_similar(paper_id: str, index: faiss.Index, conn: sqlite3.Connection,
-                   k: int = 10) -> list:
+                   k: int = None) -> list:
     """Find papers similar to a given paper."""
+    if k is None:
+        k = DEFAULT_RESULTS
     paper = get_paper_by_id(conn, paper_id)
     
     if paper is None:
@@ -126,8 +133,10 @@ def search_similar(paper_id: str, index: faiss.Index, conn: sqlite3.Connection,
     return results[:k]
 
 
-def search_abstract(query: str, conn: sqlite3.Connection, k: int = 10, include_hidden: bool = False) -> list:
+def search_abstract(query: str, conn: sqlite3.Connection, k: int = None, include_hidden: bool = False) -> list:
     """Search titles + abstracts using FTS5."""
+    if k is None:
+        k = DEFAULT_RESULTS
     where_hidden = "" if include_hidden else "AND p.hidden = 0"
     cursor = conn.execute(
         f"""SELECT p.*, bm25(papers_fts) as score 
@@ -173,7 +182,7 @@ def main():
     parser.add_argument("--query", "-q", help="Semantic search query")
     parser.add_argument("--similar", "-s", help="Find papers similar to this paper ID")
     parser.add_argument("--abstract", "-a", help="Abstract keyword search (title + abstract)")
-    parser.add_argument("--k", type=int, default=10, help="Number of results")
+    parser.add_argument("--k", type=int, default=DEFAULT_RESULTS, help=f"Number of results (default: {DEFAULT_RESULTS})")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
     

@@ -25,9 +25,16 @@ import yaml
 from rich.console import Console
 from rich.table import Table
 
-from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, get_db_connection, validate_date
+from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, FILTERING, get_db_connection, validate_date
 
 console = Console()
+
+# Load filtering weights from config
+CITATION_WEIGHT_S2 = FILTERING["citation_weight_s2"]
+CITATION_WEIGHT_OA = FILTERING["citation_weight_oa"]
+KEYWORD_WEIGHT = FILTERING["keyword_weight"]
+POPULARITY_WEIGHT = FILTERING["popularity_weight"]
+NEAR_MISS_THRESHOLD = FILTERING["near_miss_threshold"]
 
 
 def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list:
@@ -107,8 +114,8 @@ def compute_popularity_score(paper: dict) -> float:
     s2_score = math.log1p(citations_s2) / 10
     oa_score = math.log1p(citations_oa) / 10
     
-    # Combined score
-    score = 0.6 * s2_score + 0.4 * oa_score
+    # Combined score (weights from config)
+    score = CITATION_WEIGHT_S2 * s2_score + CITATION_WEIGHT_OA * oa_score
     
     return min(score, 1.0)
 
@@ -129,8 +136,8 @@ def compute_combined_score(paper: dict, config: dict) -> dict:
     
     tier = get_tier(paper["primary_category"], config)
     
-    # Combined score for ranking
-    combined = 0.6 * keyword_score + 0.4 * popularity_score
+    # Combined score for ranking (weights from config)
+    combined = KEYWORD_WEIGHT * keyword_score + POPULARITY_WEIGHT * popularity_score
     
     return {
         "keyword_score": keyword_score,
@@ -203,11 +210,11 @@ def filter_papers(papers: list, config: dict) -> dict:
     near_misses.sort(key=lambda x: x["combined_score"], reverse=True)
     
     # Select serendipity (random from rejected, but not lowest)
-    mid_rejected = [p for p in rejected if p["combined_score"] > 0.05]
+    mid_rejected = [p for p in rejected if p["combined_score"] > NEAR_MISS_THRESHOLD]
     serendipity = random.sample(mid_rejected, min(serendipity_count, len(mid_rejected)))
     
     # Select random negatives (truly low scorers)
-    low_rejected = [p for p in rejected if p["combined_score"] <= 0.05]
+    low_rejected = [p for p in rejected if p["combined_score"] <= NEAR_MISS_THRESHOLD]
     random_negatives = random.sample(low_rejected, min(random_negative_count, len(low_rejected)))
     
     near_misses = near_misses[:near_miss_count]

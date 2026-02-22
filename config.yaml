@@ -1,68 +1,89 @@
 # Daily Briefs Configuration
+# ==========================
+# This file controls all aspects of the arXiv paper curation system.
+# Comments explain what each setting does and when you might change it.
 
-# Paths (all relative to root, or absolute)
-# If root is not specified, defaults to the directory containing config.yaml
+# -----------------------------------------------------------------------------
+# PATHS
+# -----------------------------------------------------------------------------
+# Where data is stored. All paths are relative to 'root' unless absolute.
+# You typically only need to change 'root' for multi-agent setups.
 paths:
   root: /home/node/.openclaw/workspace/Projects/daily-briefs
-  db: data/papers.db
-  text: data/text/
-  embeddings: data/embeddings/
-  filtered: data/filtered/
-  reports: reports/
-  logs: data/logs/
+  db: data/papers.db           # SQLite database (single source of truth)
+  text: data/text/             # Extracted paper text (~75KB each)
+  embeddings: data/embeddings/ # FAISS index + embedding vectors
+  filtered: data/filtered/     # Daily filtered results (JSON)
+  reports: reports/            # Generated markdown reports
+  logs: data/logs/             # Pipeline logs
 
-# arXiv category tiers
+# -----------------------------------------------------------------------------
+# CATEGORIES
+# -----------------------------------------------------------------------------
+# arXiv categories to monitor, organized by priority tier.
+# Tier determines filtering threshold (tier1 = low bar, tier3 = high bar).
+#
+# Tier 1: Your core interests. Most papers pass through.
+# Tier 2: Adjacent fields. Only high-scoring papers included.
+# Tier 3: Peripheral. Only exceptional papers (rarely included).
 categories:
-  tier1:  # Primary focus - high recall
-    - cs.AI
-    - cs.CL
-    - cs.CY
-    - cs.LG
-    - cs.NE
-    - stat.ML
+  tier1:
+    - cs.AI   # Artificial Intelligence
+    - cs.CL   # Computation and Language (NLP)
+    - cs.CY   # Computers and Society
+    - cs.LG   # Machine Learning
+    - cs.NE   # Neural and Evolutionary Computing
+    - stat.ML # Statistics - Machine Learning
     
-  tier2:  # Secondary - high precision only
-    - cs.IR
-    - cond-mat.dis-nn
-    - cs.CE
-    - cs.CV
-    - cs.SI
-    - cs.ET
-    - cs.DL
-    - cs.GT
-    - cs.HC
-    - cs.MA
-    - cs.OH
-    - stat.TH
-    - cs.GL
-    - physics.hist-ph
-    - physics.soc-ph
-    - math.DS
-    - math.IT
-    - math.MG
-    - math.OC
-    - math.PR
-    - math.ST
+  tier2:
+    - cs.IR   # Information Retrieval
+    - cs.CV   # Computer Vision
+    - cs.SI   # Social and Information Networks
+    - cs.HC   # Human-Computer Interaction
+    - cs.GT   # Game Theory
+    - cs.MA   # Multiagent Systems
+    - cs.DL   # Digital Libraries
+    - cs.CE   # Computational Engineering
+    - cs.ET   # Emerging Technologies
+    - cs.OH   # Other CS
+    - cs.GL   # General Literature
+    - stat.TH # Statistics Theory
+    - math.IT # Information Theory
+    - math.OC # Optimization and Control
+    - math.PR # Probability
+    - math.ST # Statistics Theory
+    - math.DS # Dynamical Systems
+    - math.MG # Metric Geometry
+    - physics.hist-ph  # History of Physics
+    - physics.soc-ph   # Physics and Society
+    - cond-mat.dis-nn  # Disordered Systems / Neural Networks
     
-  tier3:  # Tertiary - archive/download only
-    - cs.RO
-    - cs.PL
-    - cs.SY
-    - q-bio.NC
-    - q-bio.PE
-    - q-bio.OT
-    - q-bio.QM
-    - econ.EM
-    - econ.GN
-    - econ.TH
-    - eess.SY
-    - eess.SP
-    - cond-mat.stat-mech
-    - nlin.AO
-    - nlin.CD
-    - nlin.CG
+  tier3:
+    - cs.RO   # Robotics
+    - cs.PL   # Programming Languages
+    - cs.SY   # Systems and Control
+    - q-bio.NC  # Neurons and Cognition
+    - q-bio.PE  # Populations and Evolution
+    - q-bio.OT  # Other Quantitative Biology
+    - q-bio.QM  # Quantitative Methods
+    - econ.EM   # Econometrics
+    - econ.GN   # General Economics
+    - econ.TH   # Theoretical Economics
+    - eess.SY   # Systems and Control
+    - eess.SP   # Signal Processing
+    - cond-mat.stat-mech  # Statistical Mechanics
+    - nlin.AO   # Adaptation and Self-Organizing Systems
+    - nlin.CD   # Chaotic Dynamics
+    - nlin.CG   # Cellular Automata
 
-# Interest profile (keywords, phrases, project contexts)
+# -----------------------------------------------------------------------------
+# INTERESTS
+# -----------------------------------------------------------------------------
+# Your research interests, used for the "Interest" filter stream.
+# Papers matching these terms score higher in filtering.
+#
+# keywords: Individual terms/phrases to match in title/abstract
+# project_contexts: Longer phrases describing active research projects
 interests:
   keywords:
     - language model
@@ -101,53 +122,105 @@ interests:
     - LLM calibration
     - plausibility judgment
 
-# Filtering thresholds
+# -----------------------------------------------------------------------------
+# FILTERING
+# -----------------------------------------------------------------------------
+# Controls how papers are scored and selected for daily briefs.
 filtering:
-  # Tier 1: include by default, filter only obvious noise
-  tier1_min_score: 0.1
+  # Minimum score thresholds by tier (0.0 to 1.0)
+  # Lower = more permissive, higher = more selective
+  tier1_min_score: 0.1   # Tier 1: let most through
+  tier2_min_score: 0.5   # Tier 2: need decent relevance
+  tier3_min_score: 0.8   # Tier 3: only exceptional papers
   
-  # Tier 2: higher bar
-  tier2_min_score: 0.5
+  # How to combine citation sources for popularity score
+  # (Semantic Scholar weight + OpenAlex weight should = 1.0)
+  citation_weight_s2: 0.6      # Weight for Semantic Scholar citations
+  citation_weight_oa: 0.4      # Weight for OpenAlex citations
   
-  # Tier 3: very high bar (only exceptional papers)
-  tier3_min_score: 0.8
+  # How to combine keyword relevance vs popularity
+  # Higher keyword_weight = prioritize your interests over citations
+  keyword_weight: 0.6          # Weight for keyword/interest match
+  popularity_weight: 0.4       # Weight for citation-based popularity
   
-  # Number of serendipity samples per day
-  serendipity_count: 5
+  # Papers just below threshold, shown for feedback calibration
+  near_miss_threshold: 0.05    # How close to threshold counts as "near miss"
+  near_miss_count: 3           # How many near-misses to include
   
-  # Number of near-misses to show for feedback
-  near_miss_count: 3
+  # Serendipity: random samples to discover unexpected papers
+  serendipity_count: 5         # Random samples per day
   
-  # Number of random negatives for calibration
+  # Random negatives: low-scored papers for calibration feedback
   random_negative_count: 2
 
-# Enrichment APIs
+# -----------------------------------------------------------------------------
+# EMBEDDINGS & UMAP
+# -----------------------------------------------------------------------------
+# Settings for semantic embeddings and 2D visualization projection.
+embeddings:
+  # SPECTER model dimensions (don't change unless using different model)
+  dimension: 768
+  
+  # UMAP projection parameters for 2D visualization
+  # See: https://umap-learn.readthedocs.io/en/latest/parameters.html
+  umap_n_neighbors: 15   # Higher = more global structure, lower = more local
+  umap_min_dist: 0.1     # Higher = more spread out, lower = tighter clusters
+  umap_random_state: 42  # For reproducibility (though UMAP is inherently stochastic)
+
+# -----------------------------------------------------------------------------
+# SEARCH
+# -----------------------------------------------------------------------------
+# Default parameters for semantic and full-text search.
+search:
+  default_results: 10    # Number of results to return by default
+
+# -----------------------------------------------------------------------------
+# APIs
+# -----------------------------------------------------------------------------
+# External API settings for enrichment (citations) and ingestion.
 apis:
+  arxiv:
+    rate_limit_seconds: 1.0    # Delay between RSS feed fetches
+    
   semantic_scholar:
     enabled: true
-    rate_limit_per_second: 10
+    delay_seconds: 0.15        # Delay between requests (~6-7 req/sec)
     
-  openlex:
+  openalex:
     enabled: true
-    rate_limit_per_second: 10
+    delay_seconds: 0.1         # Delay between requests (~10 req/sec)
 
-# Storage settings
+# -----------------------------------------------------------------------------
+# STORAGE
+# -----------------------------------------------------------------------------
+# Controls what gets downloaded and kept.
 storage:
-  download_pdf: true
-  download_source: true
-  max_source_size_mb: 200  # Skip sources larger than this
-  
-# Report settings
+  download_pdf: true           # Download PDFs for text extraction
+  delete_pdf_after_extract: true  # Delete PDF after extracting text (saves space)
+  max_source_size_mb: 200      # Skip source files larger than this
+
+# -----------------------------------------------------------------------------
+# REPORTS
+# -----------------------------------------------------------------------------
+# Controls the daily markdown report format.
 report:
-  max_papers_per_stream: 10
+  max_papers_per_stream: 10    # Max papers shown per stream (Popular/Interest/etc)
+  max_authors: 3               # Truncate author list after N names (+ "et al.")
   include_abstract_preview: true
-  abstract_preview_length: 300
-  
-# GitHub settings (for feedback issues)
+  abstract_preview_length: 300 # Characters to show in abstract preview
+
+# -----------------------------------------------------------------------------
+# GITHUB
+# -----------------------------------------------------------------------------
+# For feedback issue links in reports.
+# Leave repo empty to disable feedback links.
 github:
   repo: johnplake/daily-briefs
 
-# Dashboard settings
+# -----------------------------------------------------------------------------
+# DASHBOARD
+# -----------------------------------------------------------------------------
+# Settings for the Dash web dashboard (app.py).
 dashboard:
-  host: 127.0.0.1
+  host: 127.0.0.1    # Use 0.0.0.0 to allow external access
   port: 8050

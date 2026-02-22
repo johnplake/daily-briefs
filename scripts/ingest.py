@@ -21,15 +21,19 @@ import requests
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from config import CONFIG, PROJECT_ROOT, DB_PATH, get_db_connection, validate_date
+from config import (
+    CONFIG, PROJECT_ROOT, DB_PATH, APIS,
+    HTTP_RATE_LIMITED,
+    get_db_connection, validate_date
+)
 
 console = Console()
 
 # arXiv endpoints
 ARXIV_RSS = "https://export.arxiv.org/rss/{}"
 
-# Rate limiting
-RATE_LIMIT_SECONDS = 1
+# Rate limiting (from config)
+RATE_LIMIT_SECONDS = APIS["arxiv_rate_limit"]
 
 
 def get_all_categories(config: dict) -> list:
@@ -47,7 +51,7 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
     for attempt in range(max_retries):
         try:
             response = requests.get(url, timeout=30)
-            if response.status_code == 429:
+            if response.status_code == HTTP_RATE_LIMITED:
                 wait_time = (2 ** attempt) * 5
                 console.print(f"[yellow]Rate limited on {category}. Waiting {wait_time}s...[/yellow]")
                 time.sleep(wait_time)

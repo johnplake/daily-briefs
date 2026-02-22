@@ -18,12 +18,17 @@ import numpy as np
 from rich.console import Console
 from umap import UMAP
 
-from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection, validate_date
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, EMBEDDINGS, get_db_connection, validate_date
 
 console = Console()
 
 # Derived paths
 INDEX_PATH = EMBEDDINGS_DIR / "faiss.index"
+
+# UMAP defaults from config
+UMAP_N_NEIGHBORS = EMBEDDINGS["umap_n_neighbors"]
+UMAP_MIN_DIST = EMBEDDINGS["umap_min_dist"]
+UMAP_RANDOM_STATE = EMBEDDINGS["umap_random_state"]
 
 
 def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]:
@@ -61,13 +66,21 @@ def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]
     return embeddings, [(row["id"], row["embedding_idx"]) for row in papers]
 
 
-def run_umap(embeddings: np.ndarray, n_neighbors: int = 15, 
-             min_dist: float = 0.1, random_state: int = 42) -> np.ndarray:
+def run_umap(embeddings: np.ndarray, n_neighbors: int = None, 
+             min_dist: float = None, random_state: int = None) -> np.ndarray:
     """
     Run UMAP dimensionality reduction.
     
     Returns 2D coordinates array.
     """
+    # Apply defaults from config
+    if n_neighbors is None:
+        n_neighbors = UMAP_N_NEIGHBORS
+    if min_dist is None:
+        min_dist = UMAP_MIN_DIST
+    if random_state is None:
+        random_state = UMAP_RANDOM_STATE
+        
     console.print(f"[cyan]Running UMAP (n_neighbors={n_neighbors}, min_dist={min_dist})...[/cyan]")
     
     reducer = UMAP(
@@ -106,12 +119,12 @@ def update_coordinates(conn: sqlite3.Connection, paper_ids: list, coords: np.nda
 
 def main():
     parser = argparse.ArgumentParser(description="Project embeddings to 2D with UMAP")
-    parser.add_argument("--n-neighbors", type=int, default=15, 
-                        help="UMAP n_neighbors parameter (default: 15)")
-    parser.add_argument("--min-dist", type=float, default=0.1,
-                        help="UMAP min_dist parameter (default: 0.1)")
-    parser.add_argument("--random-state", type=int, default=42,
-                        help="Random state for reproducibility (default: 42)")
+    parser.add_argument("--n-neighbors", type=int, default=UMAP_N_NEIGHBORS, 
+                        help=f"UMAP n_neighbors parameter (default: {UMAP_N_NEIGHBORS})")
+    parser.add_argument("--min-dist", type=float, default=UMAP_MIN_DIST,
+                        help=f"UMAP min_dist parameter (default: {UMAP_MIN_DIST})")
+    parser.add_argument("--random-state", type=int, default=UMAP_RANDOM_STATE,
+                        help=f"Random state for reproducibility (default: {UMAP_RANDOM_STATE})")
     args = parser.parse_args()
     
     console.print("[bold green]UMAP Projection[/bold green]")
