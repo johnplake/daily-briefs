@@ -164,7 +164,7 @@ def parse_entry(entry: dict, category: str, announced_date: str) -> dict:
         "abstract": description.replace("\n", " ").strip(),
         "authors": json.dumps(authors),
         "primary_category": category,
-        "categories": " ".join(categories),
+        "categories": json.dumps(categories),
         "version": version,
         "submitted_date": submitted_date,
         "updated_date": announced_date if version > 1 else None,
@@ -200,9 +200,9 @@ def fetch_all_papers(categories: list, announced_date: str) -> list:
                 if paper_id in all_papers:
                     # Merge categories if we've seen this paper before
                     existing = all_papers[paper_id]
-                    existing_cats = set(existing["categories"].split())
-                    new_cats = set(paper["categories"].split())
-                    existing["categories"] = " ".join(existing_cats | new_cats)
+                    existing_cats = set(json.loads(existing["categories"]))
+                    new_cats = set(json.loads(paper["categories"]))
+                    existing["categories"] = json.dumps(list(existing_cats | new_cats))
                     # Keep higher version
                     if paper["version"] > existing["version"]:
                         existing["version"] = paper["version"]

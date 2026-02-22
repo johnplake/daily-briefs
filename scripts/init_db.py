@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS papers (
     
     -- Categories
     primary_category TEXT,                    -- "cs.AI"
-    categories       TEXT,                    -- "cs.AI cs.CL cs.LG"
+    categories       TEXT,                    -- JSON array: ["cs.AI", "cs.CL", "cs.LG"]
     
     -- Versioning
     version          INTEGER DEFAULT 1,       -- current version number

@@ -62,8 +62,8 @@ def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list[dict]:
         else:
             paper["authors"] = []
         
-        # Categories is space-separated
-        paper["categories_list"] = paper["categories"].split() if paper["categories"] else []
+        # Categories is JSON array
+        paper["categories_list"] = json.loads(paper["categories"]) if paper["categories"] else []
         
         papers.append(paper)
     

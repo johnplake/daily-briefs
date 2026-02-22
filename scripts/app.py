@@ -9,6 +9,8 @@ Features:
 - Mobile-responsive layout
 """
 
+import json
+
 import dash
 from dash import dcc, html, Input, Output, State, ctx
 import plotly.express as px
@@ -97,7 +99,7 @@ df = load_papers()
 # Get unique categories for filter
 all_categories = set()
 for cats in df['categories'].dropna():
-    all_categories.update(cats.split())
+    all_categories.update(json.loads(cats))
 category_options = [{'label': cat, 'value': cat} for cat in sorted(all_categories)]
 
 app.layout = html.Div([
@@ -230,9 +232,11 @@ def update_scatter(search_query, category, show_hidden, start_date, end_date, _r
     else:
         filtered_df = load_papers(include_hidden=include_hidden)
     
-    # Apply category filter
+    # Apply category filter (categories is JSON array)
     if category != 'all' and not filtered_df.empty:
-        filtered_df = filtered_df[filtered_df['categories'].str.contains(category, na=False)]
+        filtered_df = filtered_df[filtered_df['categories'].apply(
+            lambda x: category in json.loads(x) if x else False
+        )]
     
     # Apply date filter
     if start_date and end_date and not filtered_df.empty:
@@ -405,7 +409,10 @@ def display_paper_details(clickData, filtered_data_json):
         
         html.P([
             html.Strong("All Categories: "),
-            html.Span(paper['categories'], style={'fontSize': '14px'})
+            html.Span(
+                ', '.join(json.loads(paper['categories'])) if paper['categories'] else 'None',
+                style={'fontSize': '14px'}
+            )
         ]),
         
         html.P([
