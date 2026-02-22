@@ -22,8 +22,11 @@ from datetime import datetime
 # Import config (app.py is now in scripts/ alongside config.py)
 from config import CONFIG, DB_PATH, get_db_connection, PROJECT_ROOT
 
-def load_papers(include_hidden: bool = False):
-    """Load all papers with UMAP coordinates."""
+def load_papers(include_hidden: bool = False) -> pd.DataFrame:
+    """Load all papers with UMAP coordinates.
+    
+    Returns DataFrame with paper metadata for visualization.
+    """
     conn = get_db_connection()
     
     where_hidden = "" if include_hidden else "AND hidden = 0"
@@ -49,8 +52,11 @@ def load_papers(include_hidden: bool = False):
     
     return df
 
-def search_papers(query_text, include_hidden: bool = False):
-    """Full-text search on papers."""
+def search_papers(query_text: str, include_hidden: bool = False) -> pd.DataFrame:
+    """Full-text search on papers.
+    
+    Returns DataFrame of matching papers for visualization.
+    """
     if not query_text or query_text.strip() == "":
         return load_papers(include_hidden=include_hidden)
     

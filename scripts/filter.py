@@ -37,8 +37,11 @@ POPULARITY_WEIGHT = FILTERING["popularity_weight"]
 NEAR_MISS_THRESHOLD = FILTERING["near_miss_threshold"]
 
 
-def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list:
-    """Get all papers announced on a specific date."""
+def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list[dict]:
+    """Get all papers announced on a specific date.
+    
+    Returns list of paper dicts for iteration/filtering.
+    """
     cursor = conn.execute("""
         SELECT paper_id, title, abstract, primary_category, categories,
                citations_s2, citations_oa, authors, arxiv_url, announced_date

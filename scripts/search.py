@@ -41,8 +41,11 @@ def load_index() -> faiss.Index | None:
     return faiss.read_index(str(index_path))
 
 
-def get_papers_by_embedding_idx(conn: sqlite3.Connection, indices: list) -> dict:
-    """Get paper metadata by embedding_idx values."""
+def get_papers_by_embedding_idx(conn: sqlite3.Connection, indices: list[int]) -> dict[int, dict]:
+    """Get paper metadata by embedding_idx values.
+    
+    Returns dict mapping embedding_idx -> paper dict for O(1) lookup.
+    """
     if not indices:
         return {}
     
@@ -63,7 +66,10 @@ def get_papers_by_embedding_idx(conn: sqlite3.Connection, indices: list) -> dict
 
 
 def get_paper_by_id(conn: sqlite3.Connection, paper_id: str) -> dict | None:
-    """Get paper by paper_id."""
+    """Get paper by paper_id.
+    
+    Returns paper dict or None if not found.
+    """
     cursor = conn.execute(
         "SELECT * FROM papers WHERE paper_id = ? AND hidden = 0",
         (paper_id,)
