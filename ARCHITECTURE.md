@@ -320,3 +320,73 @@ Migration from JSON-based structure to SQLite-centric was completed:
 | `data/arxiv/raw/{date}/{id}/` | `data/arxiv/{date}/{id}/paper.txt` |
 | Query = scan JSON files | Query = SQL |
 | No full-text search | FTS5 on title + abstract |
+
+---
+
+## Multi-Agent Configuration
+
+Scripts support per-agent configuration via the `DAILY_BRIEFS_CONFIG` environment variable.
+
+### Config File Structure
+
+```yaml
+# config.yaml
+paths:
+  root: /path/to/data/directory
+  db: data/papers.db          # relative to root
+  text: data/text/
+  embeddings: data/embeddings/
+  filtered: data/filtered/
+  reports: reports/
+
+categories:
+  tier1: [cs.AI, cs.CL, cs.LG, ...]
+  tier2: [cs.CV, ...]
+  tier3: [cs.RO, ...]
+
+interests:
+  keywords: [language model, transformer, ...]
+  project_contexts: [...]
+
+filtering:
+  tier1_min_score: 0.1
+  # ...
+```
+
+### Config Resolution
+
+1. Check `DAILY_BRIEFS_CONFIG` env var
+2. If not set, fall back to `{script_dir}/../config.yaml`
+
+### Wrapper Scripts
+
+Each agent has a wrapper in their `bin/` directory:
+
+```bash
+#!/bin/bash
+# workspace-turtle/bin/daily-briefs
+
+SCRIPT_DIR="/path/to/shared/scripts"
+CONFIG="/path/to/agent/config.yaml"
+
+SCRIPT_NAME="$1"
+shift
+
+exec env \
+  DAILY_BRIEFS_CONFIG="$CONFIG" \
+  python "$SCRIPT_DIR/${SCRIPT_NAME}.py" "$@"
+```
+
+**Usage:**
+```bash
+daily-briefs ingest --date 2026-02-22
+daily-briefs embed --date 2026-02-22
+daily-briefs search -q "transformer attention"
+```
+
+### Agent Isolation
+
+Each agent gets:
+- **Own config file** - custom categories, interests, thresholds
+- **Own data directory** - separate database, embeddings, reports
+- **Shared scripts** - single codebase, no duplication
