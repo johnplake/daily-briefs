@@ -7,6 +7,8 @@ for fast similarity search.
 
 Embeddings are computed from title + abstract.
 The embedding_idx column in the database maps papers to FAISS index positions.
+
+Optionally runs UMAP projection to 2D after embedding (--umap flag).
 """
 
 import argparse
@@ -30,6 +32,9 @@ import numpy as np
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from sentence_transformers import SentenceTransformer
+
+# Import UMAP functions from project.py
+from project import load_embeddings_and_ids, run_umap, update_coordinates
 
 console = Console()
 
@@ -130,6 +135,9 @@ def main():
     parser.add_argument("--batch-size", type=int, default=32, help="Batch size for embedding")
     parser.add_argument("--limit", type=int, help="Limit number of papers to embed")
     parser.add_argument("--rebuild", action="store_true", help="Rebuild entire index from scratch")
+    parser.add_argument("--umap", action="store_true", help="Run UMAP projection after embedding")
+    parser.add_argument("--umap-neighbors", type=int, default=15, help="UMAP n_neighbors (default: 15)")
+    parser.add_argument("--umap-min-dist", type=float, default=0.1, help="UMAP min_dist (default: 0.1)")
     args = parser.parse_args()
     
     console.print("[bold green]Paper Embedding with SPECTER[/bold green]")
@@ -158,6 +166,23 @@ def main():
     
     if not papers:
         console.print("[yellow]No papers need embedding.[/yellow]")
+        
+        # Still run UMAP if requested (useful for recomputing projections)
+        if args.umap:
+            console.print("\n[bold green]Running UMAP Projection[/bold green]")
+            embeddings, paper_ids = load_embeddings_and_ids(conn)
+            
+            if len(embeddings) > 0:
+                coords = run_umap(
+                    embeddings,
+                    n_neighbors=args.umap_neighbors,
+                    min_dist=args.umap_min_dist
+                )
+                update_coordinates(conn, paper_ids, coords)
+                console.print(f"[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
+            else:
+                console.print("[yellow]No embeddings to project.[/yellow]")
+        
         conn.close()
         return
     
@@ -212,7 +237,6 @@ def main():
         )
     
     conn.commit()
-    conn.close()
     
     # Save index
     save_index(index)
@@ -220,6 +244,39 @@ def main():
     console.print(f"\n[bold green]✓ Embedded {len(papers)} papers[/bold green]")
     console.print(f"[bold green]✓ Index now contains {index.ntotal} vectors[/bold green]")
     console.print(f"[bold green]✓ Saved to {INDEX_DIR}[/bold green]")
+    
+    # Run UMAP projection if requested
+    if args.umap:
+        console.print("\n[bold green]Running UMAP Projection[/bold green]")
+        
+        # Reconnect for UMAP (we committed above)
+        conn = get_db_connection()
+        
+        # Load all embeddings (including newly added ones)
+        embeddings, paper_ids = load_embeddings_and_ids(conn)
+        
+        if len(embeddings) > 0:
+            # Run UMAP
+            coords = run_umap(
+                embeddings,
+                n_neighbors=args.umap_neighbors,
+                min_dist=args.umap_min_dist
+            )
+            
+            # Update database
+            update_coordinates(conn, paper_ids, coords)
+            
+            console.print(f"[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
+            
+            # Print coordinate ranges
+            x_min, x_max = coords[:, 0].min(), coords[:, 0].max()
+            y_min, y_max = coords[:, 1].min(), coords[:, 1].max()
+            console.print(f"  X range: [{x_min:.2f}, {x_max:.2f}]")
+            console.print(f"  Y range: [{y_min:.2f}, {y_max:.2f}]")
+        else:
+            console.print("[yellow]No embeddings to project.[/yellow]")
+    
+    conn.close()
 
 
 if __name__ == "__main__":
