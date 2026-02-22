@@ -302,79 +302,77 @@ def upsert_paper(conn: sqlite3.Connection, paper: dict, text_extracted: bool) ->
     """
     cursor = conn.cursor()
     
-    # Check if paper exists
+    # First try an insert (safe under concurrency)
+    cursor.execute("""
+        INSERT INTO papers (
+            paper_source, paper_id, announced_date,
+            title, abstract, authors,
+            primary_category, categories,
+            version, submitted_date, updated_date,
+            arxiv_url, pdf_url, doi,
+            text_extracted
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(paper_source, paper_id) DO NOTHING
+    """, (
+        paper["paper_source"],
+        paper["paper_id"],
+        paper["announced_date"],
+        paper["title"],
+        paper["abstract"],
+        paper["authors"],
+        paper["primary_category"],
+        paper["categories"],
+        paper["version"],
+        paper["submitted_date"],
+        paper["updated_date"],
+        paper["arxiv_url"],
+        paper["pdf_url"],
+        paper["doi"],
+        1 if text_extracted else 0,
+    ))
+    
+    if cursor.rowcount == 1:
+        return "inserted", False
+    
+    # Paper already exists - fetch current version
     cursor.execute(
         "SELECT id, version, text_extracted FROM papers WHERE paper_source = ? AND paper_id = ?",
         (paper["paper_source"], paper["paper_id"])
     )
-    existing = cursor.fetchone()
+    existing_id, existing_version, existing_text = cursor.fetchone()
     
-    if existing is None:
-        # New paper - insert
+    # Check if this is a newer version
+    if paper["version"] > existing_version:
+        # Version update - update metadata, keep embedding_idx
+        # Note: We intentionally do NOT clear embedding_idx here.
+        # The paper's semantic fingerprint rarely changes significantly between versions.
         cursor.execute("""
-            INSERT INTO papers (
-                paper_source, paper_id, announced_date,
-                title, abstract, authors,
-                primary_category, categories,
-                version, submitted_date, updated_date,
-                arxiv_url, pdf_url, doi,
-                text_extracted
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            UPDATE papers SET
+                title = ?,
+                abstract = ?,
+                authors = ?,
+                categories = ?,
+                version = ?,
+                updated_date = ?,
+                doi = COALESCE(?, doi),
+                text_extracted = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
         """, (
-            paper["paper_source"],
-            paper["paper_id"],
-            paper["announced_date"],
             paper["title"],
             paper["abstract"],
             paper["authors"],
-            paper["primary_category"],
             paper["categories"],
             paper["version"],
-            paper["submitted_date"],
-            paper["updated_date"],
-            paper["arxiv_url"],
-            paper["pdf_url"],
+            paper["announced_date"],  # updated_date = when we saw the new version
             paper["doi"],
-            1 if text_extracted else 0,
+            1 if text_extracted else existing_text,
+            existing_id,
         ))
-        return "inserted", False
+        return "updated", True  # needs_reextract = True for version updates
     
-    else:
-        existing_id, existing_version, existing_text = existing
-        
-        # Check if this is a newer version
-        if paper["version"] > existing_version:
-            # Version update - update metadata, keep embedding_idx
-            # Note: We intentionally do NOT clear embedding_idx here.
-            # The paper's semantic fingerprint rarely changes significantly between versions.
-            cursor.execute("""
-                UPDATE papers SET
-                    title = ?,
-                    abstract = ?,
-                    authors = ?,
-                    categories = ?,
-                    version = ?,
-                    updated_date = ?,
-                    doi = COALESCE(?, doi),
-                    text_extracted = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            """, (
-                paper["title"],
-                paper["abstract"],
-                paper["authors"],
-                paper["categories"],
-                paper["version"],
-                paper["announced_date"],  # updated_date = when we saw the new version
-                paper["doi"],
-                1 if text_extracted else existing_text,
-                existing_id,
-            ))
-            return "updated", True  # needs_reextract = True for version updates
-        
-        else:
-            # Same or older version - no update needed
-            return "unchanged", False
+    # Same or older version - no update needed
+    return "unchanged", False
 
 
 def main():
