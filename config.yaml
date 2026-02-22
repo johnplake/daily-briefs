@@ -224,3 +224,4 @@ github:
 dashboard:
   host: 127.0.0.1    # Use 0.0.0.0 to allow external access
   port: 8050
+  max_search_results: 500  # Max rows returned for search results

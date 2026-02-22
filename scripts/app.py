@@ -24,6 +24,9 @@ from datetime import datetime
 # Import config (app.py is now in scripts/ alongside config.py)
 from config import CONFIG, DB_PATH, get_db_connection, PROJECT_ROOT
 
+# Dashboard settings
+MAX_SEARCH_RESULTS = CONFIG.get("dashboard", {}).get("max_search_results", 500)
+
 def load_papers(include_hidden: bool = False) -> pd.DataFrame:
     """Load all papers with UMAP coordinates.
     
@@ -78,7 +81,7 @@ def search_papers(query_text: str, include_hidden: bool = False) -> pd.DataFrame
           AND p.umap_x IS NOT NULL
           {where_hidden}
         ORDER BY bm25(papers_fts)
-        LIMIT 500
+        LIMIT {MAX_SEARCH_RESULTS}
     """
     
     df = pd.read_sql_query(search_query, conn, params=(query_text,))
