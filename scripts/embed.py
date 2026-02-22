@@ -113,6 +113,31 @@ def save_index(index: faiss.Index):
     faiss.write_index(index, str(index_path))
 
 
+def validate_index_alignment(conn: sqlite3.Connection, index: faiss.Index) -> None:
+    """Ensure DB embedding_idx values align with FAISS index (contiguous 0..n-1)."""
+    n_vectors = index.ntotal
+    
+    cursor = conn.execute(
+        "SELECT embedding_idx FROM papers WHERE embedding_idx IS NOT NULL ORDER BY embedding_idx"
+    )
+    rows = cursor.fetchall()
+    
+    if len(rows) != n_vectors:
+        raise RuntimeError(
+            f"DB/FAISS mismatch: {len(rows)} embeddings in DB vs {n_vectors} vectors in FAISS. "
+            "Run embed.py --rebuild to fix."
+        )
+    
+    if n_vectors == 0:
+        return
+    
+    idxs = [row[0] for row in rows]
+    if min(idxs) != 0 or max(idxs) != n_vectors - 1 or len(set(idxs)) != n_vectors:
+        raise RuntimeError(
+            "Non-contiguous embedding_idx values detected. Run embed.py --rebuild to fix."
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate paper embeddings")
     parser.add_argument("--date", help="Only embed papers from this date (YYYY-MM-DD)")
@@ -142,8 +167,15 @@ def main():
     # Validate date if provided
     date_filter = validate_date(args.date) if args.date else None
     
-    # Get current index size (this will be the starting position for new embeddings)
-    start_idx = get_current_index_size()
+    # Load or create index
+    index = load_or_create_index()
+    
+    # Guardrail: refuse to append if DB/index are out of sync (unless rebuild)
+    if not args.rebuild:
+        validate_index_alignment(conn, index)
+    
+    # Starting position for new embeddings
+    start_idx = index.ntotal
     
     # Get papers to embed
     papers = get_papers_to_embed(conn, date_filter, args.limit)
@@ -204,9 +236,6 @@ def main():
     
     # Normalize for cosine similarity
     faiss.normalize_L2(new_embeddings)
-    
-    # Load or create index
-    index = load_or_create_index()
     
     # Add new embeddings
     index.add(new_embeddings)

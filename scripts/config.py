@@ -38,11 +38,10 @@ def validate_config(config: dict, config_path: Path) -> None:
     """
     errors = []
     
-    # Required: paths.root (or we can't find data)
+    # Required: paths section
     if "paths" not in config:
         errors.append("Missing 'paths' section")
-    elif "root" not in config["paths"]:
-        errors.append("Missing 'paths.root' - must specify data directory")
+    # paths.root is optional; load_config will default to project root
     
     # Required: categories with at least one tier
     if "categories" not in config:

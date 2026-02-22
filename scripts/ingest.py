@@ -24,7 +24,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from config import (
-    CONFIG, PROJECT_ROOT, DB_PATH, APIS,
+    CONFIG, PROJECT_ROOT, DB_PATH, APIS, TEXT_DIR,
     HTTP_RATE_LIMITED,
     get_db_connection, validate_date
 )
@@ -223,9 +223,9 @@ def fetch_all_papers(categories: list, announced_date: str) -> list:
 
 
 def get_text_path(paper: dict) -> Path:
-    """Get the path where paper text should be stored."""
+    """Get the path where paper text should be stored (uses configured TEXT_DIR)."""
     return (
-        PROJECT_ROOT / "data" / paper["paper_source"] / 
+        TEXT_DIR / paper["paper_source"] / 
         paper["announced_date"] / paper["paper_id"] / "paper.txt"
     )
 
