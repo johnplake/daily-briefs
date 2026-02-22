@@ -182,6 +182,7 @@ def get_embeddings_config(config: dict = None) -> dict:
         config = CONFIG
     embeddings = config.get("embeddings", {})
     return {
+        "model_name": embeddings.get("model_name", "sentence-transformers/allenai-specter"),
         "dimension": embeddings.get("dimension", 768),
         "umap_n_neighbors": embeddings.get("umap_n_neighbors", 15),
         "umap_min_dist": embeddings.get("umap_min_dist", 0.1),

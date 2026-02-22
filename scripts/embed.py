@@ -32,8 +32,8 @@ console = Console()
 # Use EMBEDDINGS_DIR from config
 INDEX_DIR = EMBEDDINGS_DIR
 
-# SPECTER model for scientific papers
-MODEL_NAME = "sentence-transformers/allenai-specter"
+# Embedding model for scientific papers
+MODEL_NAME = EMBEDDINGS["model_name"]
 EMBEDDING_DIM = EMBEDDINGS["dimension"]
 
 

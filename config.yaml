@@ -158,8 +158,9 @@ filtering:
 # -----------------------------------------------------------------------------
 # Settings for semantic embeddings and 2D visualization projection.
 embeddings:
-  # SPECTER model dimensions (don't change unless using different model)
-  dimension: 768
+  # Embedding model (SPECTER)
+  model_name: sentence-transformers/allenai-specter
+  dimension: 768  # Embedding dimensionality for the model above
   
   # UMAP projection parameters for 2D visualization
   # See: https://umap-learn.readthedocs.io/en/latest/parameters.html
