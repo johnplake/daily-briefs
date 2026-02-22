@@ -5,7 +5,7 @@ Semantic search over paper embeddings.
 Supports:
 - Query search: Find papers matching a text query
 - Similar papers: Find papers similar to a given paper
-- Full-text search: Keyword search in titles and abstracts
+- Abstract search: Keyword search in titles and abstracts
 """
 
 import argparse
@@ -126,8 +126,8 @@ def search_similar(paper_id: str, index: faiss.Index, conn: sqlite3.Connection,
     return results[:k]
 
 
-def search_fulltext(query: str, conn: sqlite3.Connection, k: int = 10, include_hidden: bool = False) -> list:
-    """Full-text search using FTS5."""
+def search_abstract(query: str, conn: sqlite3.Connection, k: int = 10, include_hidden: bool = False) -> list:
+    """Search titles + abstracts using FTS5."""
     where_hidden = "" if include_hidden else "AND p.hidden = 0"
     cursor = conn.execute(
         f"""SELECT p.*, bm25(papers_fts) as score 
@@ -172,20 +172,20 @@ def main():
     parser = argparse.ArgumentParser(description="Search paper embeddings")
     parser.add_argument("--query", "-q", help="Semantic search query")
     parser.add_argument("--similar", "-s", help="Find papers similar to this paper ID")
-    parser.add_argument("--fulltext", "-f", help="Full-text keyword search")
+    parser.add_argument("--abstract", "-a", help="Abstract keyword search (title + abstract)")
     parser.add_argument("--k", type=int, default=10, help="Number of results")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     args = parser.parse_args()
     
-    if not args.query and not args.similar and not args.fulltext:
-        console.print("[red]Provide --query, --similar, or --fulltext[/red]")
+    if not args.query and not args.similar and not args.abstract:
+        console.print("[red]Provide --query, --similar, or --abstract[/red]")
         return
     
     conn = get_db_connection()
     
-    # Handle full-text search (doesn't need embeddings)
-    if args.fulltext:
-        results = search_fulltext(args.fulltext, conn, args.k)
+    # Handle abstract search (doesn't need embeddings)
+    if args.abstract:
+        results = search_abstract(args.abstract, conn, args.k)
         if not results:
             console.print("[yellow]No results found[/yellow]")
             return

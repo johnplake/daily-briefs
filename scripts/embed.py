@@ -69,16 +69,19 @@ def get_papers_to_embed(conn: sqlite3.Connection, date_filter: str = None,
         WHERE embedding_idx IS NULL
           AND (abstract IS NOT NULL AND abstract != '')
     """
+    params = []
     
     if date_filter:
-        query += f" AND announced_date = '{date_filter}'"
+        query += " AND announced_date = ?"
+        params.append(date_filter)
     
     query += " ORDER BY announced_date DESC, id"
     
     if limit:
-        query += f" LIMIT {limit}"
+        query += " LIMIT ?"
+        params.append(limit)
     
-    cursor = conn.execute(query)
+    cursor = conn.execute(query, params)
     return cursor.fetchall()
 
 
@@ -236,11 +239,14 @@ def main():
     console.print(f"[bold green]✓ Index now contains {index.ntotal} vectors[/bold green]")
     console.print(f"[bold green]✓ Saved to {INDEX_DIR}[/bold green]")
     
+    # Close the original connection before UMAP (clean handoff)
+    conn.close()
+    
     # Run UMAP projection if requested
     if args.umap:
         console.print("\n[bold green]Running UMAP Projection[/bold green]")
         
-        # Reconnect for UMAP (we committed above)
+        # Reconnect for UMAP
         conn = get_db_connection()
         
         # Load all embeddings (including newly added ones)
@@ -266,8 +272,8 @@ def main():
             console.print(f"  Y range: [{y_min:.2f}, {y_max:.2f}]")
         else:
             console.print("[yellow]No embeddings to project.[/yellow]")
-    
-    conn.close()
+        
+        conn.close()
 
 
 if __name__ == "__main__":

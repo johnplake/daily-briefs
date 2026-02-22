@@ -58,9 +58,14 @@ CREATE TABLE IF NOT EXISTS papers (
     
     -- Embedding
     embedding_idx    INTEGER,                 -- FAISS index position (NULL = not embedded)
+    umap_x           REAL,                    -- 2D projection X (NULL = not projected)
+    umap_y           REAL,                    -- 2D projection Y (NULL = not projected)
     
     -- Text extraction
     text_extracted   BOOLEAN DEFAULT 0,       -- 1 if paper.txt exists
+    
+    -- Visibility
+    hidden           BOOLEAN DEFAULT 0,       -- 1 = hidden from search/filter
     
     -- Timestamps
     ingested_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
