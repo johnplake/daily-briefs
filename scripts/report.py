@@ -12,6 +12,7 @@ Each paper includes:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from urllib.parse import quote
@@ -82,9 +83,10 @@ def generate_feedback_url(paper: dict, stream: str, date: str) -> str | None:
     """Generate GitHub Issue URL for feedback. Returns None if github.repo not configured."""
     if not GITHUB_REPO:
         return None
-        
-    paper_id = paper.get("paper_id", "unknown")
-    title = (paper.get("title", "Unknown") or "Unknown")[:80]
+    
+    # Sanitize inputs (defense in depth - data comes from arXiv but could have weird chars)
+    paper_id = re.sub(r'[\r\n]', '', paper.get("paper_id", "unknown"))
+    title = re.sub(r'[\r\n]', ' ', paper.get("title", "Unknown") or "Unknown")
     
     issue_title = quote(f"[Feedback] {paper_id}")
     
