@@ -57,7 +57,8 @@ def get_papers_by_embedding_idx(conn: sqlite3.Connection, indices: list) -> dict
         f"""SELECT embedding_idx, paper_id, title, authors, primary_category, 
                    announced_date, arxiv_url, citations_s2
             FROM papers 
-            WHERE embedding_idx IN ({placeholders})""",
+            WHERE embedding_idx IN ({placeholders})
+              AND hidden = 0""",
         indices
     )
     
@@ -70,7 +71,7 @@ def get_papers_by_embedding_idx(conn: sqlite3.Connection, indices: list) -> dict
 def get_paper_by_id(conn: sqlite3.Connection, paper_id: str) -> dict | None:
     """Get paper by paper_id."""
     cursor = conn.execute(
-        "SELECT * FROM papers WHERE paper_id = ?",
+        "SELECT * FROM papers WHERE paper_id = ? AND hidden = 0",
         (paper_id,)
     )
     row = cursor.fetchone()

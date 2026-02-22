@@ -16,6 +16,8 @@ import plotly.graph_objects as go
 import pandas as pd
 import sqlite3
 from pathlib import Path
+import io
+from datetime import datetime
 
 # Project paths
 PROJECT_ROOT = Path(__file__).parent
@@ -27,19 +29,21 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def load_papers():
+def load_papers(include_hidden: bool = False):
     """Load all papers with UMAP coordinates."""
     conn = get_db_connection()
     
-    query = """
+    where_hidden = "" if include_hidden else "AND hidden = 0"
+    query = f"""
         SELECT 
             id, paper_id, title, abstract, authors,
             primary_category, categories, announced_date,
             arxiv_url, pdf_url,
             citations_s2, citations_oa,
-            umap_x, umap_y
+            umap_x, umap_y, hidden
         FROM papers
         WHERE umap_x IS NOT NULL AND umap_y IS NOT NULL
+          {where_hidden}
         ORDER BY announced_date DESC
     """
     
@@ -52,24 +56,26 @@ def load_papers():
     
     return df
 
-def search_papers(query_text):
+def search_papers(query_text, include_hidden: bool = False):
     """Full-text search on papers."""
     if not query_text or query_text.strip() == "":
-        return load_papers()
+        return load_papers(include_hidden=include_hidden)
     
     conn = get_db_connection()
     
-    search_query = """
+    where_hidden = "" if include_hidden else "AND p.hidden = 0"
+    search_query = f"""
         SELECT 
             p.id, p.paper_id, p.title, p.abstract, p.authors,
             p.primary_category, p.categories, p.announced_date,
             p.arxiv_url, p.pdf_url,
             p.citations_s2, p.citations_oa,
-            p.umap_x, p.umap_y
+            p.umap_x, p.umap_y, p.hidden
         FROM papers p
         JOIN papers_fts fts ON p.id = fts.rowid
         WHERE papers_fts MATCH ?
           AND p.umap_x IS NOT NULL
+          {where_hidden}
         ORDER BY bm25(papers_fts)
         LIMIT 500
     """
@@ -96,127 +102,134 @@ for cats in df['categories'].dropna():
 category_options = [{'label': cat, 'value': cat} for cat in sorted(all_categories)]
 
 app.layout = html.Div([
-    # Header
+    # Header (compact for mobile)
     html.Div([
-        html.H1("Daily Briefs Explorer", style={
+        html.H1("Daily Briefs", style={
             'textAlign': 'center',
             'color': '#2c3e50',
-            'marginBottom': '10px'
+            'marginBottom': '5px',
+            'fontSize': '24px'
         }),
-        html.P(f"Visualizing {len(df)} papers with semantic embeddings", style={
+        html.P(f"{len(df)} papers", style={
             'textAlign': 'center',
-            'color': '#7f8c8d'
+            'color': '#7f8c8d',
+            'fontSize': '14px',
+            'margin': '0'
         })
-    ], style={'padding': '20px', 'backgroundColor': '#ecf0f1'}),
+    ], style={'padding': '10px', 'backgroundColor': '#ecf0f1'}),
     
-    # Search and filters
+    # Search and filters (stacked for mobile)
     html.Div([
         # Search box
-        html.Div([
-            dcc.Input(
-                id='search-box',
-                type='text',
-                placeholder='Search papers (title, abstract, arXiv ID)...',
-                style={
-                    'width': '100%',
-                    'padding': '10px',
-                    'fontSize': '16px',
-                    'borderRadius': '5px',
-                    'border': '1px solid #bdc3c7'
-                },
-                debounce=True
-            )
-        ], style={'marginBottom': '15px'}),
+        dcc.Input(
+            id='search-box',
+            type='text',
+            placeholder='Search papers...',
+            style={
+                'width': '100%',
+                'padding': '12px',
+                'fontSize': '16px',
+                'borderRadius': '5px',
+                'border': '1px solid #bdc3c7',
+                'boxSizing': 'border-box',
+                'marginBottom': '10px'
+            },
+            debounce=True
+        ),
         
-        # Filters row
+        # Category filter (full width)
         html.Div([
-            # Category filter
-            html.Div([
-                html.Label("Category:", style={'fontWeight': 'bold', 'marginBottom': '5px'}),
-                dcc.Dropdown(
-                    id='category-filter',
-                    options=[{'label': 'All', 'value': 'all'}] + category_options,
-                    value='all',
-                    clearable=False,
-                    style={'fontSize': '14px'}
-                )
-            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '3%'}),
-            
-            # Date range
-            html.Div([
-                html.Label("Date Range:", style={'fontWeight': 'bold', 'marginBottom': '5px'}),
-                dcc.DatePickerRange(
-                    id='date-filter',
-                    start_date=df['announced_date'].min(),
-                    end_date=df['announced_date'].max(),
-                    style={'fontSize': '14px'}
-                )
-            ], style={'width': '66%', 'display': 'inline-block'})
+            dcc.Dropdown(
+                id='category-filter',
+                options=[{'label': 'All Categories', 'value': 'all'}] + category_options,
+                value='all',
+                clearable=False,
+                style={'fontSize': '14px'}
+            )
+        ], style={'marginBottom': '10px'}),
+        
+        # Show hidden toggle
+        html.Div([
+            dcc.Checklist(
+                id='show-hidden',
+                options=[{'label': 'Show hidden papers', 'value': 'show'}],
+                value=[],
+                style={'fontSize': '12px'}
+            )
+        ], style={'marginBottom': '10px'}),
+        
+        # Date range
+        html.Div([
+            dcc.DatePickerRange(
+                id='date-filter',
+                start_date=df['announced_date'].min(),
+                end_date=df['announced_date'].max(),
+                style={'fontSize': '12px'}
+            )
         ], style={'marginBottom': '10px'})
     ], style={
-        'padding': '20px',
+        'padding': '10px',
         'backgroundColor': '#ffffff',
+        'margin': '10px',
         'borderRadius': '5px',
-        'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
-        'margin': '20px'
+        'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
     }),
     
-    # Main content area
+    # Scatter plot (full width, shorter for mobile)
     html.Div([
-        # Left: Scatter plot
-        html.Div([
-            dcc.Graph(
-                id='scatter-plot',
-                style={'height': '700px'},
-                config={
-                    'displayModeBar': True,
-                    'displaylogo': False,
-                    'modeBarButtonsToRemove': ['lasso2d']
-                }
-            )
-        ], style={
-            'width': '65%',
-            'display': 'inline-block',
-            'verticalAlign': 'top'
-        }),
-        
-        # Right: Paper details sidebar
-        html.Div([
-            html.Div(id='paper-details', style={
-                'padding': '20px',
-                'backgroundColor': '#ffffff',
-                'borderRadius': '5px',
-                'minHeight': '650px',
-                'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
-            })
-        ], style={
-            'width': '33%',
-            'display': 'inline-block',
-            'verticalAlign': 'top',
-            'paddingLeft': '2%'
-        })
-    ], style={'padding': '0 20px'}),
+        dcc.Graph(
+            id='scatter-plot',
+            style={'height': '50vh', 'minHeight': '300px'},
+            config={
+                'displayModeBar': False,
+                'displaylogo': False,
+                'scrollZoom': True
+            }
+        )
+    ], style={'padding': '0 10px'}),
     
-    # Store for filtered dataframe
-    dcc.Store(id='filtered-data-store')
-], style={'fontFamily': 'Arial, sans-serif', 'backgroundColor': '#f5f6fa'})
+    # Paper details (below plot on mobile)
+    html.Div([
+        html.Div(id='paper-details', style={
+            'padding': '15px',
+            'backgroundColor': '#ffffff',
+            'borderRadius': '5px',
+            'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
+        })
+    ], style={'padding': '10px'}),
+    
+    # Stores
+    dcc.Store(id='filtered-data-store'),
+    dcc.Store(id='selected-paper-id'),
+    dcc.Store(id='refresh-token')
+], style={
+    'fontFamily': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    'backgroundColor': '#f5f6fa',
+    'minHeight': '100vh',
+    'maxWidth': '100vw',
+    'overflowX': 'hidden'
+})
 
 @app.callback(
     [Output('scatter-plot', 'figure'),
      Output('filtered-data-store', 'data')],
     [Input('search-box', 'value'),
      Input('category-filter', 'value'),
+     Input('show-hidden', 'value'),
      Input('date-filter', 'start_date'),
-     Input('date-filter', 'end_date')]
+     Input('date-filter', 'end_date'),
+     Input('refresh-token', 'data')]
 )
-def update_scatter(search_query, category, start_date, end_date):
+def update_scatter(search_query, category, show_hidden, start_date, end_date, _refresh_token):
     """Update scatter plot based on search and filters."""
+    
+    include_hidden = show_hidden is not None and 'show' in show_hidden
     
     # Load data (with search if provided)
     if search_query and search_query.strip():
-        filtered_df = search_papers(search_query)
+        filtered_df = search_papers(search_query, include_hidden=include_hidden)
     else:
-        filtered_df = load_papers()
+        filtered_df = load_papers(include_hidden=include_hidden)
     
     # Apply category filter
     if category != 'all' and not filtered_df.empty:
@@ -246,6 +259,7 @@ def update_scatter(search_query, category, start_date, end_date):
         x='umap_x',
         y='umap_y',
         color='primary_category',
+        custom_data=['id', 'title', 'authors', 'paper_id', 'announced_date'],
         hover_data={
             'title': True,
             'authors': True,
@@ -259,10 +273,10 @@ def update_scatter(search_query, category, start_date, end_date):
     
     fig.update_traces(
         marker=dict(size=8, opacity=0.7, line=dict(width=0.5, color='white')),
-        hovertemplate='<b>%{customdata[0]}</b><br>' +
-                      'Authors: %{customdata[1]}<br>' +
-                      'arXiv: %{customdata[2]}<br>' +
-                      'Date: %{customdata[3]}<br>' +
+        hovertemplate='<b>%{customdata[1]}</b><br>' +
+                      'Authors: %{customdata[2]}<br>' +
+                      'arXiv: %{customdata[3]}<br>' +
+                      'Date: %{customdata[4]}<br>' +
                       '<extra></extra>'
     )
     
@@ -287,7 +301,8 @@ def update_scatter(search_query, category, start_date, end_date):
     return fig, filtered_df.to_json(date_format='iso', orient='split')
 
 @app.callback(
-    Output('paper-details', 'children'),
+    [Output('paper-details', 'children'),
+     Output('selected-paper-id', 'data')],
     [Input('scatter-plot', 'clickData'),
      Input('filtered-data-store', 'data')],
     prevent_initial_call=False
@@ -298,24 +313,45 @@ def display_paper_details(clickData, filtered_data_json):
     if not clickData or not filtered_data_json:
         return html.Div([
             html.H3("Paper Details", style={'color': '#2c3e50', 'borderBottom': '2px solid #3498db'}),
-            html.P("Click on a point in the scatter plot to see paper details", style={
+            html.P("Tap a dot above to see paper details", style={
                 'color': '#7f8c8d',
                 'fontStyle': 'italic',
                 'marginTop': '20px'
             })
-        ])
+        ]), None
     
-    # Load filtered dataframe
-    filtered_df = pd.read_json(filtered_data_json, orient='split')
+    # Load filtered dataframe (ensure JSON string is parsed correctly)
+    filtered_df = pd.read_json(io.StringIO(filtered_data_json), orient='split')
     
-    # Get clicked point index
-    point_idx = clickData['points'][0]['pointIndex']
-    paper = filtered_df.iloc[point_idx]
+    # Use stable ID from customdata to avoid trace index mismatch
+    clicked_id = clickData['points'][0]['customdata'][0]
+    paper = filtered_df[filtered_df['id'] == clicked_id].iloc[0]
+    
+    hidden = int(paper.get('hidden', 0))
+    btn_label = "Unhide this paper" if hidden else "Hide this paper"
+    btn_color = '#2ecc71' if hidden else '#e74c3c'
     
     return html.Div([
         html.H3("Paper Details", style={'color': '#2c3e50', 'borderBottom': '2px solid #3498db', 'paddingBottom': '10px'}),
         
         html.H4(paper['title'], style={'color': '#34495e', 'marginTop': '15px', 'lineHeight': '1.4'}),
+        
+        html.Div([
+            html.Button(
+                btn_label,
+                id='toggle-hide-btn',
+                n_clicks=0,
+                style={
+                    'backgroundColor': btn_color,
+                    'color': 'white',
+                    'border': 'none',
+                    'padding': '6px 10px',
+                    'borderRadius': '4px',
+                    'fontSize': '12px',
+                    'marginBottom': '10px'
+                }
+            )
+        ]),
         
         html.P([
             html.Strong("Authors: "),
@@ -376,11 +412,34 @@ def display_paper_details(clickData, filtered_data_json):
                 'textAlign': 'justify'
             })
         ])
-    ])
+    ]), int(paper['id'])
+
+@app.callback(
+    Output('refresh-token', 'data'),
+    Input('toggle-hide-btn', 'n_clicks'),
+    State('selected-paper-id', 'data'),
+    prevent_initial_call=True
+)
+def toggle_hide_paper(n_clicks, paper_id):
+    if not n_clicks or not paper_id:
+        return dash.no_update
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT hidden FROM papers WHERE id = ?", (paper_id,))
+    row = cur.fetchone()
+    if row is None:
+        conn.close()
+        return dash.no_update
+    new_hidden = 0 if row[0] else 1
+    cur.execute("UPDATE papers SET hidden = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_hidden, paper_id))
+    conn.commit()
+    conn.close()
+    return datetime.utcnow().isoformat()
 
 if __name__ == '__main__':
     print(f"📊 Loaded {len(df)} papers")
     print(f"📁 Database: {DB_PATH}")
     print(f"🌐 Starting dashboard on http://0.0.0.0:8050")
     print(f"📱 For Terminus: ssh -L 8050:localhost:8050 user@server")
-    app.run(debug=True, host='0.0.0.0', port=8050)
+    app.run(debug=False, host='0.0.0.0', port=8050)

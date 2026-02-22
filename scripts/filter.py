@@ -67,6 +67,7 @@ def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list:
                citations_s2, citations_oa, authors, arxiv_url, announced_date
         FROM papers
         WHERE announced_date = ?
+          AND hidden = 0
     """, (date,))
     
     papers = []
