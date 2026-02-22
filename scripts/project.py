@@ -46,9 +46,6 @@ def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]
     
     console.print(f"[cyan]Loaded FAISS index with {n_vectors} vectors[/cyan]")
     
-    # Get all embeddings
-    embeddings = index.reconstruct_n(0, n_vectors)
-    
     # Get paper IDs with their embedding indices
     cursor = conn.execute("""
         SELECT id, embedding_idx 
@@ -62,6 +59,17 @@ def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]
         console.print(f"[red]Error: {len(papers)} papers with embeddings, but {n_vectors} vectors in FAISS index[/red]")
         console.print("[red]This indicates a mismatch between DB and index. Run embed.py --rebuild to fix.[/red]")
         raise RuntimeError(f"DB/FAISS mismatch: {len(papers)} papers vs {n_vectors} vectors")
+    
+    # Guardrail: ensure embedding_idx values are contiguous 0..n_vectors-1
+    if n_vectors > 0:
+        idxs = [row["embedding_idx"] for row in papers]
+        if min(idxs) != 0 or max(idxs) != n_vectors - 1 or len(set(idxs)) != n_vectors:
+            console.print("[red]Error: embedding_idx values are not contiguous (0..n-1).[/red]")
+            console.print("[red]FAISS reconstruct_n assumes contiguous indices; run embed.py --rebuild to fix.[/red]")
+            raise RuntimeError("Non-contiguous embedding_idx values detected")
+    
+    # Get all embeddings (safe now that indices are contiguous)
+    embeddings = index.reconstruct_n(0, n_vectors)
     
     return embeddings, [(row["id"], row["embedding_idx"]) for row in papers]
 
