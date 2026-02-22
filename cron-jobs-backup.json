@@ -1,0 +1,28 @@
+{
+  "description": "Backup of cron job configs for daily-briefs. Recreate after container reinstall if needed.",
+  "updated": "2026-02-22",
+  "jobs": [
+    {
+      "name": "Daily arXiv Brief",
+      "schedule": {"kind": "cron", "expr": "0 8 * * 1-5", "tz": "America/Chicago"},
+      "sessionTarget": "isolated",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Run the daily-briefs pipeline with health monitoring:\n\n1. Run: daily-briefs run_daily --skip-enrich\n2. Check exit code. If it failed:\n   - Run: curl -fsS --retry 3 https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a/fail\n   - Send Telegram to chat -1003700767295 (topic 934): \"❌ Daily Brief FAILED: <error details>\"\n   - Stop here\n3. On success, read the generated report from ~/workspace/Projects/daily-briefs/reports/$(date +%Y-%m-%d).md\n4. Send Telegram summary to chat -1003700767295 (topic 934) with:\n   - ✅ Daily Brief complete\n   - Number of papers ingested\n   - Number selected per stream (Popular/Interest/Serendipity)\n   - Top 3-5 interesting paper titles\n5. Commit and push: cd ~/workspace/Projects/daily-briefs && git add reports/ && git commit -m \"Daily report $(date +%Y-%m-%d)\" && git push\n6. Ping health check: curl -fsS --retry 3 https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a",
+        "model": "anthropic/claude-sonnet-4-5"
+      },
+      "healthcheck_url": "https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a"
+    },
+    {
+      "name": "Daily Paper Embeddings",
+      "schedule": {"kind": "cron", "expr": "50 23 * * 1-5", "tz": "America/Chicago"},
+      "sessionTarget": "isolated",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Generate embeddings and UMAP projections with health monitoring:\n\n1. cd /home/node/.openclaw/workspace/Projects/daily-briefs\n2. Run: .venv/bin/python scripts/embed.py --umap\n3. Check exit code. If it failed:\n   - Run: curl -fsS --retry 3 https://hc-ping.com/a3bc824a-c526-4365-a6c0-6faaaed8098f/fail\n   - Send Telegram to chat -1003700767295 (topic 934): \"❌ Embeddings FAILED: <error details>\"\n   - Stop here\n4. On success, send Telegram to chat -1003700767295 (topic 934):\n   - ✅ Embeddings complete\n   - Number of papers embedded\n   - Number of UMAP projections updated\n5. Ping health check: curl -fsS --retry 3 https://hc-ping.com/a3bc824a-c526-4365-a6c0-6faaaed8098f",
+        "model": "anthropic/claude-haiku-4-5"
+      },
+      "healthcheck_url": "https://hc-ping.com/a3bc824a-c526-4365-a6c0-6faaaed8098f"
+    }
+  ]
+}

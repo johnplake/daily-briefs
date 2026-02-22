@@ -110,6 +110,14 @@ Plus feedback candidates:
 
 Note: arXiv announces papers Sun-Thu at 8pm ET. Running at 8am CST captures the previous night's announcement.
 
+### Health Monitoring
+
+Both jobs are monitored via [healthchecks.io](https://healthchecks.io):
+- Jobs ping on success → dashboard stays green
+- Jobs fail or don't run → alerts sent to Telegram
+
+See `cron-jobs-backup.json` for job configs (recreate after container reinstall).
+
 ## Setup
 
 ```bash
@@ -155,6 +163,40 @@ Papers in daily briefs include feedback links (GitHub Issues). Rate papers:
 - 👎 Not useful
 
 Feedback improves the filtering model over time.
+
+## Design Decisions
+
+Key trade-offs documented in `ARCHITECTURE.md`:
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| UMAP coordinates | Non-deterministic | Refit all papers each run; stable clustering matters, not exact coords |
+| Version updates | Don't re-embed | Semantic fingerprint rarely changes; save compute |
+| Text extraction fail | Graceful degradation | Paper still gets metadata + abstract embedding |
+| PDF storage | Delete after extraction | 40x space savings; can re-download if needed |
+| Rate limiting | Basic (no backoff) | Enrichment is manual; human can monitor |
+| File locking | None | Jobs 16h apart; no concurrent writes |
+| PDF validation | None | PyMuPDF handles errors; arXiv is reliable |
+
+## Troubleshooting
+
+### Papers missing embeddings
+```sql
+SELECT paper_id, title FROM papers WHERE embedding_idx IS NULL AND abstract IS NOT NULL;
+```
+Run `embed.py` to generate missing embeddings.
+
+### Text extraction failures
+```sql
+SELECT paper_id, title FROM papers WHERE text_extracted = 0;
+```
+These papers still have metadata and abstract embeddings; full text just unavailable.
+
+### FAISS / DB mismatch
+```bash
+.venv/bin/python scripts/verify_embeddings.py
+```
+Reports any embedding_idx values that don't match FAISS index.
 
 ## License
 

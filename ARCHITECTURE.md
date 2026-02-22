@@ -323,6 +323,150 @@ Migration from JSON-based structure to SQLite-centric was completed:
 
 ---
 
+## Design Decisions & Trade-offs
+
+This section documents intentional design choices and things we explicitly decided NOT to implement.
+
+### UMAP Non-Determinism (Accepted)
+
+**Behavior:** UMAP coordinates (`umap_x`, `umap_y`) may shift between runs, even for papers that haven't changed. This is because:
+- UMAP uses stochastic initialization
+- We refit on all papers each run (no saved model)
+- New papers change the embedding landscape
+
+**Why it's OK:**
+- The 2D projection is for visualization/exploration, not for stable identity
+- Relative clustering is preserved (similar papers stay near each other)
+- Saving a UMAP model adds complexity and doesn't meaningfully improve UX
+- Dashboard updates coordinates on each view anyway
+
+**Alternative considered:** Save fitted UMAP model and only transform new points. Rejected because:
+- UMAP `transform()` quality degrades for points far from training distribution
+- Would need periodic refitting anyway
+- Adds model versioning complexity
+
+### Re-Embedding on Version Updates (Skipped)
+
+**Behavior:** When a paper gets a new version (v2, v3, etc.), we update metadata and re-extract text, but we do NOT re-embed.
+
+**Rationale:** A paper's semantic fingerprint rarely changes significantly between versions. Most updates are typo fixes, bibliography additions, or minor clarifications. Re-embedding thousands of papers for minor revisions isn't worth the compute. The abstract (used for embedding) almost never changes substantively.
+
+### Re-Enrichment Workflow
+
+**Behavior:** Citation enrichment (`enrich.py`) is skipped in daily runs (`--skip-enrich`) but can be run manually or periodically.
+
+**Why skip daily:**
+- New papers have 0 citations on day 1
+- Semantic Scholar / OpenAlex take days to index new papers
+- Running enrichment daily wastes API calls
+
+**Recommended workflow:**
+- Weekly batch: `enrich.py --update` to refresh all papers
+- Or monthly: focus on papers older than N days
+- Enrichment is useful for the "Popular" stream (citation-based ranking)
+
+### Deduplication
+
+**Behavior:** Papers are deduplicated by `(paper_source, paper_id)`. If the same paper appears in multiple RSS feeds (e.g., cs.AI and cs.LG), it's stored once.
+
+**How it works:**
+- `UNIQUE(paper_source, paper_id)` constraint in SQLite
+- `ON CONFLICT DO UPDATE` merges categories if needed
+- First ingestion wins for `announced_date`
+
+**Cross-source deduplication (NOT implemented):**
+- If a paper appears on arXiv AND bioRxiv with different IDs, they'd be separate entries
+- Could link via DOI in future, but not a current priority
+- arXiv-only focus makes this moot for now
+
+### Text Extraction Failures (Graceful Degradation)
+
+**Behavior:** If PDF download or text extraction fails:
+1. Paper is still added to database with full metadata (title, abstract, authors)
+2. `text_extracted = 0` flag is set
+3. Paper still gets embedded (using abstract, not full text)
+4. Paper appears in searches and filters normally
+
+**Why this is fine:**
+- Abstract is sufficient for semantic embedding (SPECTER was trained on abstracts)
+- Full text is a nice-to-have for deep reading, not required for discovery
+- Failures are rare (arXiv is reliable)
+- Can query `WHERE text_extracted = 0` to find and retry failures
+
+### PDF Storage (Delete After Extraction)
+
+**Behavior:** PDFs are deleted immediately after text extraction.
+
+**Rationale:**
+- PDF: ~3MB average; Text: ~75KB average (40x savings)
+- At 1500 papers/day: 4.5GB/day vs 110MB/day
+- PDFs can always be re-downloaded from arXiv if needed
+- Full text is sufficient for search and reading
+
+### Rate Limiting in enrich.py (Basic)
+
+**Behavior:** Fixed delay between API calls + 5s sleep on 429. No exponential backoff.
+
+**Why not backoff:**
+- Enrichment runs manually, not in critical path
+- If rate limited, just wait and retry
+- Adding `backoff` library for rarely-used code isn't worth it
+- Human can monitor and adjust if needed
+
+### Race Conditions / File Locking (Not Implemented)
+
+**Behavior:** No file locking between concurrent runs.
+
+**Why not needed:**
+- Daily brief runs at 8am, embeddings at 11:50pm (16 hours apart)
+- Dashboard only reads (doesn't write embeddings)
+- Manual runs are operator-controlled
+- SQLite handles concurrent reads fine
+
+### PDF Validation Before Extraction (Not Implemented)
+
+**Behavior:** No explicit PDF validation (magic bytes, file size check) before extraction.
+
+**Why not needed:**
+- PyMuPDF (fitz) handles corrupt PDFs gracefully (throws exception)
+- We already wrap extraction in try/except
+- arXiv PDFs are reliable
+- Extra validation code for rare edge case isn't worth it
+
+---
+
+## Health Monitoring
+
+### Healthchecks.io Integration
+
+Each cron job pings healthchecks.io on completion:
+
+| Job | Ping URL | Schedule |
+|-----|----------|----------|
+| Daily Brief | `https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a` | 8am Mon-Fri |
+| Embeddings | `https://hc-ping.com/a3bc824a-c526-4365-a6c0-6faaaed8098f` | 11:50pm Mon-Fri |
+
+**How it works:**
+- Job succeeds → pings URL → check stays green
+- Job fails → pings `/fail` endpoint → check turns red, alert sent
+- Job doesn't run → no ping → grace period expires → alert sent
+
+**Alerts:** Sent to Telegram group (Cron-status topic) via healthchecks.io integration.
+
+### Telegram Notifications
+
+Both cron jobs send Telegram messages:
+- **Success:** Summary of papers ingested/embedded
+- **Failure:** Error details
+
+This provides immediate visibility without checking healthchecks.io dashboard.
+
+### Backup
+
+Cron job configurations are saved in `cron-jobs-backup.json` for easy recreation after container reinstalls.
+
+---
+
 ## Multi-Agent Configuration
 
 Scripts support per-agent configuration via the `DAILY_BRIEFS_CONFIG` environment variable.
