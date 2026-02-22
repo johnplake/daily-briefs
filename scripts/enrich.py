@@ -14,6 +14,7 @@ import sys
 import time
 from pathlib import Path
 
+import backoff
 import requests
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -23,8 +24,31 @@ from config import (
     HTTP_NOT_FOUND, HTTP_RATE_LIMITED,
     get_db_connection, validate_date
 )
+from logging_config import setup_logging
 
 console = Console()
+logger = setup_logging("enrich")
+
+
+class PaperNotFoundError(Exception):
+    """Raised when a paper is not found (404). Should not retry."""
+    pass
+
+
+def _should_giveup(e: Exception) -> bool:
+    """Don't retry on 404 (paper not found)."""
+    if isinstance(e, PaperNotFoundError):
+        return True
+    if hasattr(e, 'response') and getattr(e.response, 'status_code', None) == HTTP_NOT_FOUND:
+        return True
+    return False
+
+
+def _on_backoff(details: dict):
+    """Log when backing off."""
+    wait = details['wait']
+    tries = details['tries']
+    logger.warning(f"Backing off {wait:.1f}s after {tries} tries")
 
 # API endpoints
 S2_API = "https://api.semanticscholar.org/graph/v1/paper"
@@ -35,39 +59,65 @@ S2_DELAY = APIS["s2_delay"]
 OPENALEX_DELAY = APIS["oa_delay"]
 
 
-def fetch_s2_citations(arxiv_id: str) -> int | None:
-    """Fetch citation count from Semantic Scholar."""
+@backoff.on_exception(
+    backoff.expo,
+    requests.exceptions.RequestException,
+    max_tries=3,
+    giveup=_should_giveup,
+    on_backoff=_on_backoff,
+)
+def _fetch_s2_citations_impl(arxiv_id: str) -> int:
+    """Fetch citation count from Semantic Scholar (with retry)."""
     url = f"{S2_API}/arXiv:{arxiv_id}"
     params = {"fields": "citationCount"}
     
+    response = requests.get(url, params=params, timeout=30)
+    if response.status_code == HTTP_NOT_FOUND:
+        raise PaperNotFoundError(f"Paper {arxiv_id} not found on S2")
+    response.raise_for_status()
+    data = response.json()
+    return data.get("citationCount", 0)
+
+
+def fetch_s2_citations(arxiv_id: str) -> int | None:
+    """Fetch citation count from Semantic Scholar."""
     try:
-        response = requests.get(url, params=params, timeout=30)
-        if response.status_code == HTTP_NOT_FOUND:
-            return None
-        if response.status_code == HTTP_RATE_LIMITED:
-            console.print(f"[yellow]S2 rate limited, waiting...[/yellow]")
-            time.sleep(5)
-            return None
-        response.raise_for_status()
-        data = response.json()
-        return data.get("citationCount", 0)
+        return _fetch_s2_citations_impl(arxiv_id)
+    except PaperNotFoundError:
+        return None
     except requests.exceptions.RequestException as e:
+        logger.warning(f"S2 error for {arxiv_id} after retries: {e}")
         console.print(f"[yellow]S2 error for {arxiv_id}: {e}[/yellow]")
         return None
 
 
-def fetch_openalex_citations(arxiv_id: str) -> int | None:
-    """Fetch citation count from OpenAlex."""
+@backoff.on_exception(
+    backoff.expo,
+    requests.exceptions.RequestException,
+    max_tries=3,
+    giveup=_should_giveup,
+    on_backoff=_on_backoff,
+)
+def _fetch_openalex_citations_impl(arxiv_id: str) -> int:
+    """Fetch citation count from OpenAlex (with retry)."""
     url = f"{OPENALEX_API}/https://arxiv.org/abs/{arxiv_id}"
     
+    response = requests.get(url, timeout=30)
+    if response.status_code == HTTP_NOT_FOUND:
+        raise PaperNotFoundError(f"Paper {arxiv_id} not found on OpenAlex")
+    response.raise_for_status()
+    data = response.json()
+    return data.get("cited_by_count", 0)
+
+
+def fetch_openalex_citations(arxiv_id: str) -> int | None:
+    """Fetch citation count from OpenAlex."""
     try:
-        response = requests.get(url, timeout=30)
-        if response.status_code == HTTP_NOT_FOUND:
-            return None
-        response.raise_for_status()
-        data = response.json()
-        return data.get("cited_by_count", 0)
+        return _fetch_openalex_citations_impl(arxiv_id)
+    except PaperNotFoundError:
+        return None
     except requests.exceptions.RequestException as e:
+        logger.warning(f"OpenAlex error for {arxiv_id} after retries: {e}")
         console.print(f"[yellow]OpenAlex error for {arxiv_id}: {e}[/yellow]")
         return None
 
