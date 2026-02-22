@@ -31,6 +31,8 @@ from logging_config import setup_logging
 
 console = Console()
 logger = setup_logging("ingest")
+# NOTE: We log to file *and* print to console intentionally.
+# Console output is for live runs; logs are for audit/debugging later.
 
 # arXiv endpoints
 ARXIV_RSS = "https://export.arxiv.org/rss/{}"
