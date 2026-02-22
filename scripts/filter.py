@@ -278,6 +278,7 @@ def main():
     parser = argparse.ArgumentParser(description="Filter papers into streams")
     parser.add_argument("--date", required=True, help="Date to filter (YYYY-MM-DD)")
     parser.add_argument("--output", help="Output JSON path (default: data/filtered/YYYY-MM-DD.json)")
+    parser.add_argument("--dry-run", action="store_true", help="Run filtering without writing output")
     args = parser.parse_args()
     
     # Validate date
@@ -301,11 +302,14 @@ def main():
     print_summary(results)
     
     # Save results
-    FILTERED_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = Path(args.output) if args.output else FILTERED_DIR / f"{target_date}.json"
-    
-    save_filtered_results(results, output_path)
-    console.print(f"\n[bold green]✓ Saved filtered results to {output_path}[/bold green]")
+    if args.dry_run:
+        console.print("[yellow]Dry run - not saving filtered results.[/yellow]")
+    else:
+        FILTERED_DIR.mkdir(parents=True, exist_ok=True)
+        output_path = Path(args.output) if args.output else FILTERED_DIR / f"{target_date}.json"
+        
+        save_filtered_results(results, output_path)
+        console.print(f"\n[bold green]✓ Saved filtered results to {output_path}[/bold green]")
     
     conn.close()
 

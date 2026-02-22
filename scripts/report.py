@@ -256,6 +256,7 @@ def main():
     parser.add_argument("--date", required=True, help="Date for report (YYYY-MM-DD)")
     parser.add_argument("--input", help="Input filtered JSON (default: data/filtered/YYYY-MM-DD.json)")
     parser.add_argument("--output", help="Output report path (default: reports/YYYY-MM-DD.md)")
+    parser.add_argument("--dry-run", action="store_true", help="Generate report without writing file")
     args = parser.parse_args()
     
     # Validate date
@@ -277,11 +278,14 @@ def main():
     results = load_filtered_results(input_path)
     report = generate_report(results, target_date, config)
     
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w") as f:
-        f.write(report)
-    
-    console.print(f"\n[bold green]✓ Report saved to {output_path}[/bold green]")
+    if args.dry_run:
+        console.print("[yellow]Dry run - not writing report file.[/yellow]")
+    else:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            f.write(report)
+        
+        console.print(f"\n[bold green]✓ Report saved to {output_path}[/bold green]")
     
     # Print preview
     console.print("\n[bold]Preview (first 50 lines):[/bold]")
