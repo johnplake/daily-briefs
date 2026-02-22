@@ -25,6 +25,7 @@ from sentence_transformers import SentenceTransformer
 from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, EMBEDDINGS, get_db_connection, validate_date
 
 # Import UMAP functions from project.py
+# NOTE: Avoid importing embed.py from project.py to prevent circular imports.
 from project import load_embeddings_and_ids, run_umap, update_coordinates
 
 console = Console()
