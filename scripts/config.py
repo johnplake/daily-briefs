@@ -9,9 +9,21 @@ All paths are resolved relative to the configured root directory.
 
 import os
 import sqlite3
+import sys
+from datetime import datetime
 from pathlib import Path
 
 import yaml
+
+
+def validate_date(date_str: str) -> str:
+    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return date_str
+    except ValueError:
+        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
+        sys.exit(1)
 
 
 class ConfigError(Exception):

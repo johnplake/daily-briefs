@@ -14,26 +14,15 @@ Can be run via cron or manually.
 import argparse
 import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
 
 from rich.console import Console
 
+from config import validate_date
 from logging_config import setup_logging
 
 console = Console()
 logger = setup_logging("run_daily")
-
-
-def validate_date(date_str: str) -> str:
-    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
-    try:
-        datetime.strptime(date_str, "%Y-%m-%d")
-        return date_str
-    except ValueError:
-        logger.error(f"Invalid date format: {date_str}")
-        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
-        sys.exit(1)
 
 
 def run_step(script: str, args: list, step_name: str) -> bool:

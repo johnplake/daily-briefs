@@ -19,24 +19,13 @@ import random
 import re
 import sqlite3
 import sys
-from datetime import datetime
 from pathlib import Path
-
-
-def validate_date(date_str: str) -> str:
-    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
-    try:
-        datetime.strptime(date_str, "%Y-%m-%d")
-        return date_str
-    except ValueError:
-        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
-        sys.exit(1)
 
 import yaml
 from rich.console import Console
 from rich.table import Table
 
-from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, get_db_connection
+from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, get_db_connection, validate_date
 
 console = Console()
 

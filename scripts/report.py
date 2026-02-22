@@ -13,24 +13,13 @@ Each paper includes:
 import argparse
 import json
 import sys
-from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
-
-
-def validate_date(date_str: str) -> str:
-    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
-    try:
-        datetime.strptime(date_str, "%Y-%m-%d")
-        return date_str
-    except ValueError:
-        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
-        sys.exit(1)
 
 import yaml
 from rich.console import Console
 
-from config import CONFIG, PROJECT_ROOT, FILTERED_DIR, REPORTS_DIR
+from config import CONFIG, PROJECT_ROOT, FILTERED_DIR, REPORTS_DIR, validate_date
 
 console = Console()
 

@@ -14,18 +14,7 @@ Optionally runs UMAP projection to 2D after embedding (--umap flag).
 import argparse
 import sqlite3
 import sys
-from datetime import datetime
 from pathlib import Path
-
-
-def validate_date(date_str: str) -> str:
-    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
-    try:
-        datetime.strptime(date_str, "%Y-%m-%d")
-        return date_str
-    except ValueError:
-        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
-        sys.exit(1)
 
 import faiss
 import numpy as np
@@ -33,7 +22,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from sentence_transformers import SentenceTransformer
 
-from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection, validate_date
 
 # Import UMAP functions from project.py
 from project import load_embeddings_and_ids, run_umap, update_coordinates

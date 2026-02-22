@@ -11,7 +11,6 @@ Stores results in umap_x, umap_y columns in the papers table.
 import argparse
 import sqlite3
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import faiss
@@ -19,22 +18,12 @@ import numpy as np
 from rich.console import Console
 from umap import UMAP
 
-from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection, validate_date
 
 console = Console()
 
 # Derived paths
 INDEX_PATH = EMBEDDINGS_DIR / "faiss.index"
-
-
-def validate_date(date_str: str) -> str:
-    """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
-    try:
-        datetime.strptime(date_str, "%Y-%m-%d")
-        return date_str
-    except ValueError:
-        print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
-        sys.exit(1)
 
 
 def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]:
