@@ -86,7 +86,7 @@ def generate_feedback_url(paper: dict, stream: str, date: str) -> str | None:
     
     # Sanitize inputs (defense in depth - data comes from arXiv but could have weird chars)
     paper_id = re.sub(r'[\r\n]', '', paper.get("paper_id", "unknown"))
-    title = re.sub(r'[\r\n]', ' ', paper.get("title", "Unknown") or "Unknown")
+    title = re.sub(r'[\r\n]', ' ', paper.get("title", "Unknown") or "Unknown")[:200]
     
     issue_title = quote(f"[Feedback] {paper_id}")
     
