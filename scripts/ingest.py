@@ -153,8 +153,9 @@ def parse_entry(entry: dict, category: str, announced_date: str) -> dict:
             from email.utils import parsedate_to_datetime
             dt = parsedate_to_datetime(published)
             submitted_date = dt.strftime("%Y-%m-%d")
-        except Exception:
-            pass
+        except (TypeError, ValueError) as e:
+            logger.warning(f"Failed to parse published date '{published}': {e}")
+            submitted_date = None
     
     # DOI if present
     doi = entry.get("arxiv_doi", entry.get("doi", ""))
