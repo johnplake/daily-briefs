@@ -35,3 +35,6 @@ Thumbs.db
 # Temp
 *.tmp
 *.bak
+# Logs (keep structure, not contents)
+data/logs/*.log
+!data/logs/.gitkeep

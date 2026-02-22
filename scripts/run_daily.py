@@ -17,6 +17,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from rich.console import Console
+
+from logging_config import setup_logging
+
+console = Console()
+logger = setup_logging("run_daily")
+
 
 def validate_date(date_str: str) -> str:
     """Validate date format YYYY-MM-DD. Returns the date or exits with error."""
@@ -24,12 +31,9 @@ def validate_date(date_str: str) -> str:
         datetime.strptime(date_str, "%Y-%m-%d")
         return date_str
     except ValueError:
+        logger.error(f"Invalid date format: {date_str}")
         print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
         sys.exit(1)
-
-from rich.console import Console
-
-console = Console()
 
 
 def run_step(script: str, args: list, step_name: str) -> bool:
@@ -38,13 +42,17 @@ def run_step(script: str, args: list, step_name: str) -> bool:
     console.print(f"[bold cyan]Step: {step_name}[/bold cyan]")
     console.print(f"[bold cyan]{'='*60}[/bold cyan]\n")
     
+    logger.info(f"Starting step: {step_name}")
+    
     cmd = [sys.executable, script] + args
     result = subprocess.run(cmd, cwd=Path(script).parent.parent)
     
     if result.returncode != 0:
+        logger.error(f"Step failed: {step_name} (exit code {result.returncode})")
         console.print(f"\n[bold red]✗ {step_name} failed with code {result.returncode}[/bold red]")
         return False
     
+    logger.info(f"Step complete: {step_name}")
     console.print(f"\n[bold green]✓ {step_name} complete[/bold green]")
     return True
 
@@ -66,6 +74,7 @@ def main():
     else:
         target_date = datetime.now().strftime("%Y-%m-%d")
     
+    logger.info(f"Starting daily pipeline for {target_date}")
     console.print(f"[bold magenta]Daily Brief Pipeline for {target_date}[/bold magenta]")
     
     scripts_dir = Path(__file__).parent
@@ -79,6 +88,7 @@ def main():
             ingest_args.extend(["--tier", str(args.tier)])
         
         if not run_step(str(scripts_dir / "ingest.py"), ingest_args, "Ingestion"):
+            logger.error(f"Pipeline failed at Ingestion for {target_date}")
             return 1
     
     # Step 2: Enrich
@@ -93,6 +103,7 @@ def main():
         filter_args = ["--date", target_date]
         
         if not run_step(str(scripts_dir / "filter.py"), filter_args, "Filtering"):
+            logger.error(f"Pipeline failed at Filtering for {target_date}")
             return 1
     
     # Step 4: Report
@@ -100,8 +111,10 @@ def main():
         report_args = ["--date", target_date]
         
         if not run_step(str(scripts_dir / "report.py"), report_args, "Report Generation"):
+            logger.error(f"Pipeline failed at Report Generation for {target_date}")
             return 1
     
+    logger.info(f"Pipeline complete for {target_date}")
     console.print(f"\n[bold green]{'='*60}[/bold green]")
     console.print(f"[bold green]Pipeline complete for {target_date}[/bold green]")
     console.print(f"[bold green]{'='*60}[/bold green]")
