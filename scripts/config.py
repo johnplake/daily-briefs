@@ -169,6 +169,7 @@ def get_filtering_config(config: dict = None) -> dict:
         "citation_weight_oa": filtering.get("citation_weight_oa", 0.4),
         "keyword_weight": filtering.get("keyword_weight", 0.6),
         "popularity_weight": filtering.get("popularity_weight", 0.4),
+        "near_miss_multiplier": filtering.get("near_miss_multiplier", 0.8),
         "near_miss_threshold": filtering.get("near_miss_threshold", 0.05),
         "near_miss_count": filtering.get("near_miss_count", 3),
         "serendipity_count": filtering.get("serendipity_count", 5),

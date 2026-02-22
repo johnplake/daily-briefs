@@ -144,7 +144,8 @@ filtering:
   popularity_weight: 0.4       # Weight for citation-based popularity
   
   # Papers just below threshold, shown for feedback calibration
-  near_miss_threshold: 0.05    # How close to threshold counts as "near miss"
+  near_miss_multiplier: 0.8    # Near-miss if score >= threshold * multiplier
+  near_miss_threshold: 0.05    # Lower bound for "not too low" rejected papers
   near_miss_count: 3           # How many near-misses to include
   
   # Serendipity: random samples to discover unexpected papers

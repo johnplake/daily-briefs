@@ -34,6 +34,7 @@ CITATION_WEIGHT_S2 = FILTERING["citation_weight_s2"]
 CITATION_WEIGHT_OA = FILTERING["citation_weight_oa"]
 KEYWORD_WEIGHT = FILTERING["keyword_weight"]
 POPULARITY_WEIGHT = FILTERING["popularity_weight"]
+NEAR_MISS_MULTIPLIER = FILTERING["near_miss_multiplier"]
 NEAR_MISS_THRESHOLD = FILTERING["near_miss_threshold"]
 
 
@@ -202,7 +203,7 @@ def filter_papers(papers: list, config: dict) -> dict:
             else:
                 interest.append(paper)
         else:
-            if paper["combined_score"] >= threshold * 0.8:
+            if paper["combined_score"] >= threshold * NEAR_MISS_MULTIPLIER:
                 near_misses.append(paper)
             else:
                 rejected.append(paper)
