@@ -20,7 +20,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from config import (
-    PROJECT_ROOT, DB_PATH, APIS,
+    DB_PATH, APIS,
     HTTP_NOT_FOUND, HTTP_RATE_LIMITED,
     get_db_connection, validate_date
 )

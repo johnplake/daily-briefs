@@ -463,7 +463,7 @@ def main():
                     if download_and_extract_text(paper):
                         text_extracted = True
                         stats["text_extracted"] += 1
-                    time.sleep(0.5)  # Rate limit
+                    time.sleep(config.get("storage", {}).get("text_extract_delay", 0.5))
                 else:
                     text_extracted = text_path.exists()
             

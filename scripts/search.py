@@ -18,7 +18,7 @@ from rich.console import Console
 from rich.table import Table
 from sentence_transformers import SentenceTransformer
 
-from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, SEARCH, get_db_connection
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, SEARCH, EMBEDDINGS, get_db_connection
 
 console = Console()
 
@@ -28,7 +28,7 @@ INDEX_DIR = EMBEDDINGS_DIR
 # Search defaults from config
 DEFAULT_RESULTS = SEARCH["default_results"]
 
-MODEL_NAME = "sentence-transformers/allenai-specter"
+MODEL_NAME = EMBEDDINGS["model_name"]
 
 
 def load_index() -> faiss.Index | None:
