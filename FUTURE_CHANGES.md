@@ -23,4 +23,5 @@ The current Dash/Plotly scatter plot renders **all papers with UMAP coords**. Th
 
 ## Other Potential Improvements
 
-(Placeholder — add as we go)
+- **Add integration tests** (smoke test: init_db → ingest --dry-run → filter --dry-run → report --dry-run)
+- Add DB integrity tests (FTS sync, FAISS size match)
