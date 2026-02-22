@@ -222,16 +222,26 @@ def get_text_path(paper: dict) -> Path:
 
 def extract_text_from_pdf(pdf_path: Path) -> str | None:
     """Extract text from PDF using PyMuPDF (fitz)."""
+    import fitz
+    
     try:
-        import fitz
         doc = fitz.open(pdf_path)
         text_parts = []
         for page in doc:
             text_parts.append(page.get_text())
         doc.close()
         return "\n\n".join(text_parts)
+    except (fitz.FileDataError, fitz.EmptyFileError, fitz.FileNotFoundError) as e:
+        # Expected PDF errors - log and continue
+        console.print(f"[yellow]Invalid PDF {pdf_path}: {e}[/yellow]")
+        return None
+    except MemoryError as e:
+        # Large PDF exhausted memory - log and continue (don't crash batch)
+        console.print(f"[red]Out of memory extracting {pdf_path}[/red]")
+        return None
     except Exception as e:
-        console.print(f"[yellow]Failed to extract text from {pdf_path}: {e}[/yellow]")
+        # Unexpected error - log loudly but continue batch processing
+        console.print(f"[red]Unexpected error extracting {pdf_path}: {type(e).__name__}: {e}[/red]")
         return None
 
 
