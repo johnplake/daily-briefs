@@ -80,7 +80,11 @@ def _fetch_s2_citations_impl(arxiv_id: str) -> int:
 
 
 def fetch_s2_citations(arxiv_id: str) -> int | None:
-    """Fetch citation count from Semantic Scholar."""
+    """Fetch citation count from Semantic Scholar.
+    
+    NOTE: Returns None on errors to keep enrichment non-blocking.
+    Enrichment is optional, so we don't raise unless it's a bug.
+    """
     try:
         return _fetch_s2_citations_impl(arxiv_id)
     except PaperNotFoundError:
@@ -111,7 +115,11 @@ def _fetch_openalex_citations_impl(arxiv_id: str) -> int:
 
 
 def fetch_openalex_citations(arxiv_id: str) -> int | None:
-    """Fetch citation count from OpenAlex."""
+    """Fetch citation count from OpenAlex.
+    
+    NOTE: Returns None on errors to keep enrichment non-blocking.
+    Enrichment is optional, so we don't raise unless it's a bug.
+    """
     try:
         return _fetch_openalex_citations_impl(arxiv_id)
     except PaperNotFoundError:
