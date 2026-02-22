@@ -1,266 +1,386 @@
 """
-Dash + Plotly prototype for interactive embeddings visualization.
+Dash + Plotly dashboard for daily-briefs paper exploration.
 
 Features:
-- 2D scatter plot of paper embeddings
-- Zoom, pan, lasso select
-- Filter by stream/date
-- Hover to see paper details
-- Click to show full paper info in sidebar
+- 2D UMAP scatter plot of all papers
+- Search (full-text and semantic)
+- Filter by category, date, stream
+- Click paper → show full details
+- Mobile-responsive layout
 """
 
 import dash
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html, Input, Output, State, ctx
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
-import numpy as np
+import sqlite3
 from pathlib import Path
-import json
 
-# Load embeddings and paper metadata
-# (You'll need to generate these - see generate_demo_data() below)
-DATA_FILE = Path("data/embeddings_2d.json")
+# Project paths
+PROJECT_ROOT = Path(__file__).parent
+DB_PATH = PROJECT_ROOT / "data" / "papers.db"
 
-def load_data():
-    """Load embeddings and metadata."""
-    if not DATA_FILE.exists():
-        # Generate demo data if file doesn't exist
-        return generate_demo_data()
+def get_db_connection():
+    """Get database connection."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def load_papers():
+    """Load all papers with UMAP coordinates."""
+    conn = get_db_connection()
     
-    with open(DATA_FILE) as f:
-        data = json.load(f)
-    return pd.DataFrame(data)
-
-def generate_demo_data():
-    """Generate synthetic demo data."""
-    np.random.seed(42)
-    n = 300
+    query = """
+        SELECT 
+            id, paper_id, title, abstract, authors,
+            primary_category, categories, announced_date,
+            arxiv_url, pdf_url,
+            citations_s2, citations_oa,
+            umap_x, umap_y
+        FROM papers
+        WHERE umap_x IS NOT NULL AND umap_y IS NOT NULL
+        ORDER BY announced_date DESC
+    """
     
-    streams = np.random.choice(['Popular', 'Interest', 'Serendipity'], n)
-    dates = pd.date_range('2026-01-01', periods=30, freq='D')
+    df = pd.read_sql_query(query, conn)
+    conn.close()
     
-    # Cluster embeddings by stream
-    data = []
-    for i in range(n):
-        stream = streams[i]
-        # Create clusters for each stream
-        if stream == 'Popular':
-            x = np.random.normal(0, 0.5)
-            y = np.random.normal(0, 0.5)
-        elif stream == 'Interest':
-            x = np.random.normal(2, 0.4)
-            y = np.random.normal(1, 0.4)
-        else:  # Serendipity
-            x = np.random.normal(-1, 0.6)
-            y = np.random.normal(2, 0.6)
-        
-        data.append({
-            'x': x,
-            'y': y,
-            'stream': stream,
-            'date': str(np.random.choice(dates)),
-            'title': f"Paper {i+1}: {stream} Research Topic",
-            'authors': f"Author {i%50+1} et al.",
-            'arxiv_id': f"2601.{i:05d}",
-            'categories': np.random.choice(['cs.AI', 'cs.LG', 'cs.CL', 'stat.ML']),
-            'score': np.random.uniform(0.5, 1.0),
-        })
+    # Parse authors JSON
+    import json
+    df['authors'] = df['authors'].apply(lambda x: ', '.join(json.loads(x)[:3]) if x else 'Unknown')
     
-    return pd.DataFrame(data)
+    return df
 
-# Initialize data
-df = load_data()
+def search_papers(query_text):
+    """Full-text search on papers."""
+    if not query_text or query_text.strip() == "":
+        return load_papers()
+    
+    conn = get_db_connection()
+    
+    search_query = """
+        SELECT 
+            p.id, p.paper_id, p.title, p.abstract, p.authors,
+            p.primary_category, p.categories, p.announced_date,
+            p.arxiv_url, p.pdf_url,
+            p.citations_s2, p.citations_oa,
+            p.umap_x, p.umap_y
+        FROM papers p
+        JOIN papers_fts fts ON p.id = fts.rowid
+        WHERE papers_fts MATCH ?
+          AND p.umap_x IS NOT NULL
+        ORDER BY bm25(papers_fts)
+        LIMIT 500
+    """
+    
+    df = pd.read_sql_query(search_query, conn, params=(query_text,))
+    conn.close()
+    
+    # Parse authors JSON
+    import json
+    df['authors'] = df['authors'].apply(lambda x: ', '.join(json.loads(x)[:3]) if x else 'Unknown')
+    
+    return df
 
-# Dash app
-app = dash.Dash(__name__)
+# Initialize app
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
+
+# Load initial data
+df = load_papers()
+
+# Get unique categories for filter
+all_categories = set()
+for cats in df['categories'].dropna():
+    all_categories.update(cats.split())
+category_options = [{'label': cat, 'value': cat} for cat in sorted(all_categories)]
 
 app.layout = html.Div([
+    # Header
     html.Div([
-        html.H1("ArXiv Paper Embeddings Explorer", style={'textAlign': 'center'}),
-        
-        # Filters
+        html.H1("Daily Briefs Explorer", style={
+            'textAlign': 'center',
+            'color': '#2c3e50',
+            'marginBottom': '10px'
+        }),
+        html.P(f"Visualizing {len(df)} papers with semantic embeddings", style={
+            'textAlign': 'center',
+            'color': '#7f8c8d'
+        })
+    ], style={'padding': '20px', 'backgroundColor': '#ecf0f1'}),
+    
+    # Search and filters
+    html.Div([
+        # Search box
         html.Div([
-            html.Label("Filter by Stream:"),
-            dcc.Dropdown(
-                id='stream-filter',
-                options=[{'label': 'All', 'value': 'all'}] + 
-                        [{'label': s, 'value': s} for s in df['stream'].unique()],
-                value='all',
-                clearable=False,
-                style={'width': '200px', 'display': 'inline-block', 'marginRight': '20px'}
-            ),
-            
-            html.Label("Filter by Date:"),
-            dcc.DatePickerRange(
-                id='date-filter',
-                start_date=df['date'].min(),
-                end_date=df['date'].max(),
-                style={'display': 'inline-block'}
-            ),
-        ], style={'padding': '20px', 'backgroundColor': '#f5f5f5'}),
-        
-        # Main content: scatter plot + sidebar
-        html.Div([
-            # Scatter plot
-            html.Div([
-                dcc.Graph(
-                    id='scatter-plot',
-                    style={'height': '700px'},
-                    config={'displayModeBar': True}
-                )
-            ], style={'width': '70%', 'display': 'inline-block', 'verticalAlign': 'top'}),
-            
-            # Sidebar for paper details
-            html.Div([
-                html.H3("Paper Details", style={'borderBottom': '2px solid #333'}),
-                html.Div(id='paper-details', style={
-                    'padding': '20px',
-                    'backgroundColor': '#fafafa',
+            dcc.Input(
+                id='search-box',
+                type='text',
+                placeholder='Search papers (title, abstract, arXiv ID)...',
+                style={
+                    'width': '100%',
+                    'padding': '10px',
+                    'fontSize': '16px',
                     'borderRadius': '5px',
-                    'minHeight': '600px'
-                })
-            ], style={
-                'width': '28%',
-                'display': 'inline-block',
-                'verticalAlign': 'top',
-                'marginLeft': '2%',
+                    'border': '1px solid #bdc3c7'
+                },
+                debounce=True
+            )
+        ], style={'marginBottom': '15px'}),
+        
+        # Filters row
+        html.Div([
+            # Category filter
+            html.Div([
+                html.Label("Category:", style={'fontWeight': 'bold', 'marginBottom': '5px'}),
+                dcc.Dropdown(
+                    id='category-filter',
+                    options=[{'label': 'All', 'value': 'all'}] + category_options,
+                    value='all',
+                    clearable=False,
+                    style={'fontSize': '14px'}
+                )
+            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '3%'}),
+            
+            # Date range
+            html.Div([
+                html.Label("Date Range:", style={'fontWeight': 'bold', 'marginBottom': '5px'}),
+                dcc.DatePickerRange(
+                    id='date-filter',
+                    start_date=df['announced_date'].min(),
+                    end_date=df['announced_date'].max(),
+                    style={'fontSize': '14px'}
+                )
+            ], style={'width': '66%', 'display': 'inline-block'})
+        ], style={'marginBottom': '10px'})
+    ], style={
+        'padding': '20px',
+        'backgroundColor': '#ffffff',
+        'borderRadius': '5px',
+        'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
+        'margin': '20px'
+    }),
+    
+    # Main content area
+    html.Div([
+        # Left: Scatter plot
+        html.Div([
+            dcc.Graph(
+                id='scatter-plot',
+                style={'height': '700px'},
+                config={
+                    'displayModeBar': True,
+                    'displaylogo': False,
+                    'modeBarButtonsToRemove': ['lasso2d']
+                }
+            )
+        ], style={
+            'width': '65%',
+            'display': 'inline-block',
+            'verticalAlign': 'top'
+        }),
+        
+        # Right: Paper details sidebar
+        html.Div([
+            html.Div(id='paper-details', style={
                 'padding': '20px',
-                'backgroundColor': '#fff',
-                'border': '1px solid #ddd',
-                'borderRadius': '5px'
+                'backgroundColor': '#ffffff',
+                'borderRadius': '5px',
+                'minHeight': '650px',
+                'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
             })
-        ])
-    ], style={'padding': '20px'})
-])
+        ], style={
+            'width': '33%',
+            'display': 'inline-block',
+            'verticalAlign': 'top',
+            'paddingLeft': '2%'
+        })
+    ], style={'padding': '0 20px'}),
+    
+    # Store for filtered dataframe
+    dcc.Store(id='filtered-data-store')
+], style={'fontFamily': 'Arial, sans-serif', 'backgroundColor': '#f5f6fa'})
 
 @app.callback(
-    Output('scatter-plot', 'figure'),
-    Input('stream-filter', 'value'),
-    Input('date-filter', 'start_date'),
-    Input('date-filter', 'end_date')
+    [Output('scatter-plot', 'figure'),
+     Output('filtered-data-store', 'data')],
+    [Input('search-box', 'value'),
+     Input('category-filter', 'value'),
+     Input('date-filter', 'start_date'),
+     Input('date-filter', 'end_date')]
 )
-def update_scatter(stream, start_date, end_date):
-    """Update scatter plot based on filters."""
-    filtered_df = df.copy()
+def update_scatter(search_query, category, start_date, end_date):
+    """Update scatter plot based on search and filters."""
     
-    # Filter by stream
-    if stream != 'all':
-        filtered_df = filtered_df[filtered_df['stream'] == stream]
+    # Load data (with search if provided)
+    if search_query and search_query.strip():
+        filtered_df = search_papers(search_query)
+    else:
+        filtered_df = load_papers()
     
-    # Filter by date
-    if start_date and end_date:
+    # Apply category filter
+    if category != 'all' and not filtered_df.empty:
+        filtered_df = filtered_df[filtered_df['categories'].str.contains(category, na=False)]
+    
+    # Apply date filter
+    if start_date and end_date and not filtered_df.empty:
         filtered_df = filtered_df[
-            (filtered_df['date'] >= start_date) &
-            (filtered_df['date'] <= end_date)
+            (filtered_df['announced_date'] >= start_date) &
+            (filtered_df['announced_date'] <= end_date)
         ]
+    
+    if filtered_df.empty:
+        # Empty plot
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No papers match your filters",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=20, color="gray")
+        )
+        return fig, None
     
     # Create scatter plot
     fig = px.scatter(
         filtered_df,
-        x='x',
-        y='y',
-        color='stream',
-        hover_data=['title', 'authors', 'arxiv_id', 'date', 'score'],
-        color_discrete_map={
-            'Popular': '#FF6B6B',
-            'Interest': '#4ECDC4',
-            'Serendipity': '#95E1D3'
+        x='umap_x',
+        y='umap_y',
+        color='primary_category',
+        hover_data={
+            'title': True,
+            'authors': True,
+            'paper_id': True,
+            'announced_date': True,
+            'umap_x': False,
+            'umap_y': False
         },
         title=f"Showing {len(filtered_df)} papers"
     )
     
     fig.update_traces(
-        marker=dict(size=10, opacity=0.7, line=dict(width=0.5, color='white')),
+        marker=dict(size=8, opacity=0.7, line=dict(width=0.5, color='white')),
         hovertemplate='<b>%{customdata[0]}</b><br>' +
                       'Authors: %{customdata[1]}<br>' +
                       'arXiv: %{customdata[2]}<br>' +
                       'Date: %{customdata[3]}<br>' +
-                      'Score: %{customdata[4]:.2f}<br>' +
                       '<extra></extra>'
     )
     
     fig.update_layout(
-        xaxis_title="Dimension 1",
-        yaxis_title="Dimension 2",
+        xaxis_title="",
+        yaxis_title="",
         hovermode='closest',
         plot_bgcolor='#f8f9fa',
         paper_bgcolor='white',
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02,
+            font=dict(size=10)
+        ),
+        margin=dict(l=40, r=120, t=60, b=40)
     )
     
-    return fig
+    # Store filtered data for paper details callback
+    return fig, filtered_df.to_json(date_format='iso', orient='split')
 
 @app.callback(
     Output('paper-details', 'children'),
-    Input('scatter-plot', 'clickData'),
-    prevent_initial_call=True
+    [Input('scatter-plot', 'clickData'),
+     Input('filtered-data-store', 'data')],
+    prevent_initial_call=False
 )
-def display_paper_details(clickData):
-    """Show detailed paper info when point is clicked."""
-    if not clickData:
-        return html.P("Click on a point to see paper details")
+def display_paper_details(clickData, filtered_data_json):
+    """Show paper details when a point is clicked."""
     
-    point = clickData['points'][0]
-    # customdata order: title, authors, arxiv_id, date, score
-    title = point['customdata'][0]
-    authors = point['customdata'][1]
-    arxiv_id = point['customdata'][2]
-    date = point['customdata'][3]
-    score = point['customdata'][4]
-    stream = point['marker.color']  # This will be the stream name
+    if not clickData or not filtered_data_json:
+        return html.Div([
+            html.H3("Paper Details", style={'color': '#2c3e50', 'borderBottom': '2px solid #3498db'}),
+            html.P("Click on a point in the scatter plot to see paper details", style={
+                'color': '#7f8c8d',
+                'fontStyle': 'italic',
+                'marginTop': '20px'
+            })
+        ])
     
-    # Get the full row from dataframe
-    idx = point['pointIndex']
-    row = df.iloc[idx]
+    # Load filtered dataframe
+    filtered_df = pd.read_json(filtered_data_json, orient='split')
+    
+    # Get clicked point index
+    point_idx = clickData['points'][0]['pointIndex']
+    paper = filtered_df.iloc[point_idx]
     
     return html.Div([
-        html.H4(title, style={'color': '#2c3e50', 'marginBottom': '15px'}),
+        html.H3("Paper Details", style={'color': '#2c3e50', 'borderBottom': '2px solid #3498db', 'paddingBottom': '10px'}),
+        
+        html.H4(paper['title'], style={'color': '#34495e', 'marginTop': '15px', 'lineHeight': '1.4'}),
         
         html.P([
             html.Strong("Authors: "),
-            html.Span(authors)
-        ]),
+            html.Span(paper['authors'])
+        ], style={'marginTop': '10px'}),
         
         html.P([
             html.Strong("arXiv ID: "),
-            html.A(arxiv_id, href=f"https://arxiv.org/abs/{arxiv_id}", target="_blank")
+            html.A(
+                paper['paper_id'],
+                href=paper['arxiv_url'],
+                target="_blank",
+                style={'color': '#3498db', 'textDecoration': 'none'}
+            ),
+            html.Span(" | ", style={'margin': '0 5px'}),
+            html.A(
+                "PDF",
+                href=paper['pdf_url'],
+                target="_blank",
+                style={'color': '#e74c3c', 'textDecoration': 'none'}
+            )
         ]),
         
         html.P([
             html.Strong("Date: "),
-            html.Span(date)
+            html.Span(paper['announced_date'])
         ]),
         
         html.P([
-            html.Strong("Stream: "),
-            html.Span(row['stream'], style={
-                'padding': '2px 8px',
-                'backgroundColor': {'Popular': '#FF6B6B', 'Interest': '#4ECDC4', 'Serendipity': '#95E1D3'}[row['stream']],
+            html.Strong("Category: "),
+            html.Span(paper['primary_category'], style={
+                'backgroundColor': '#3498db',
                 'color': 'white',
-                'borderRadius': '3px'
+                'padding': '2px 8px',
+                'borderRadius': '3px',
+                'fontSize': '12px'
             })
         ]),
         
         html.P([
-            html.Strong("Categories: "),
-            html.Span(row['categories'])
+            html.Strong("All Categories: "),
+            html.Span(paper['categories'], style={'fontSize': '14px'})
         ]),
         
         html.P([
-            html.Strong("Score: "),
-            html.Span(f"{score:.3f}")
+            html.Strong("Citations: "),
+            html.Span(f"S2: {paper['citations_s2'] or 'N/A'}, OpenAlex: {paper['citations_oa'] or 'N/A'}")
         ]),
         
-        html.Hr(),
+        html.Hr(style={'margin': '15px 0'}),
         
-        html.P([
-            html.Strong("Abstract:"),
-            html.Br(),
-            html.I("(Abstract would go here - integrate with your paper metadata)")
-        ], style={'fontSize': '14px', 'color': '#555'})
+        html.Div([
+            html.Strong("Abstract:", style={'display': 'block', 'marginBottom': '10px'}),
+            html.P(paper['abstract'] if paper['abstract'] else "No abstract available", style={
+                'fontSize': '14px',
+                'lineHeight': '1.6',
+                'color': '#555',
+                'textAlign': 'justify'
+            })
+        ])
     ])
 
 if __name__ == '__main__':
-    print(f"Loaded {len(df)} papers")
-    print(f"Streams: {df['stream'].value_counts().to_dict()}")
-    app.run_server(debug=True, host='0.0.0.0', port=8050)
+    print(f"📊 Loaded {len(df)} papers")
+    print(f"📁 Database: {DB_PATH}")
+    print(f"🌐 Starting dashboard on http://0.0.0.0:8050")
+    print(f"📱 For Terminus: ssh -L 8050:localhost:8050 user@server")
+    app.run(debug=True, host='0.0.0.0', port=8050)
