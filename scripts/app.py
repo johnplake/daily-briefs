@@ -19,11 +19,7 @@ from pathlib import Path
 import io
 from datetime import datetime
 
-# Import config - app.py is in project root, scripts/config.py expects to be in scripts/
-# So we need to handle this carefully
-import os
-import sys
-sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+# Import config (app.py is now in scripts/ alongside config.py)
 from config import DB_PATH, get_db_connection, PROJECT_ROOT
 
 def load_papers(include_hidden: bool = False):
