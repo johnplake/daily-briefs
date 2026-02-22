@@ -219,18 +219,25 @@ When a paper originally discovered on arXiv gets published at a conference (e.g.
 - No separate files
 
 ### `embed.py`
-- Queries DB: `WHERE text_extracted=1 AND embedding_idx IS NULL`
-- Generates SPECTER embeddings from abstract (or text)
+- Queries DB: `WHERE embedding_idx IS NULL AND abstract IS NOT NULL`
+- Generates SPECTER embeddings from title + abstract
 - Appends vectors to FAISS index
 - Updates `embedding_idx` column with position
-- No `paper_ids.json` needed
+- Optional `--umap` flag runs UMAP projection after embedding
+- Also accepts `--umap-neighbors` and `--umap-min-dist` params
 
 ### `project.py`
+- Standalone UMAP projection (also callable via `embed.py --umap`)
 - Loads all embeddings from FAISS index
 - Runs UMAP to project 768-dim → 2D
 - Updates `umap_x`, `umap_y` columns for all papers
 - Refits on all papers each run (coordinates may shift)
 - No model saved — always recomputes
+
+### `verify_embeddings.py`
+- Verifies embedding_idx ↔ FAISS mapping integrity
+- Re-embeds sample papers and checks cosine similarity
+- Reports any mismatches or out-of-bounds indices
 
 ### `search.py`
 - Takes query text, generates embedding
@@ -292,16 +299,14 @@ No migration complexity. SQLite handles schema evolution gracefully.
 
 ---
 
-## Migration Plan
+## Migration (Completed 2026-02-21)
 
-1. Run `init_db.py` to create new schema
-2. Run `migrate.py`:
-   - Parse all existing `metadata.json` → INSERT into DB
-   - Move `paper.txt` files to new paths
-   - Map `paper_ids.json` positions to `embedding_idx`
-3. Verify: row counts, spot-check paths
-4. Delete old `data/arxiv/raw/` structure
-5. Delete `data/embeddings/paper_ids.json`
+Migration from JSON-based structure to SQLite-centric was completed:
+1. `init_db.py` created schema
+2. `migrate.py` moved 439 papers from `metadata.json` files to DB
+3. `paper_ids.json` mappings transferred to `embedding_idx` column
+4. Old `data/arxiv/raw/` structure deleted
+5. `verify_embeddings.py` confirmed all mappings correct
 
 ---
 
