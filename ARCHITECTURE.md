@@ -86,6 +86,10 @@ CREATE TABLE papers (
     -- Embedding
     embedding_idx    INTEGER,                 -- FAISS index position (NULL = not embedded)
     
+    -- 2D projection (UMAP)
+    umap_x           REAL,                    -- 2D x-coordinate for visualization
+    umap_y           REAL,                    -- 2D y-coordinate for visualization
+    
     -- Text extraction
     text_extracted   BOOLEAN DEFAULT 0,       -- 1 if paper.txt exists
     
@@ -220,6 +224,13 @@ When a paper originally discovered on arXiv gets published at a conference (e.g.
 - Appends vectors to FAISS index
 - Updates `embedding_idx` column with position
 - No `paper_ids.json` needed
+
+### `project.py`
+- Loads all embeddings from FAISS index
+- Runs UMAP to project 768-dim → 2D
+- Updates `umap_x`, `umap_y` columns for all papers
+- Refits on all papers each run (coordinates may shift)
+- No model saved — always recomputes
 
 ### `search.py`
 - Takes query text, generates embedding
