@@ -32,7 +32,7 @@ import requests
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from config import CONFIG, PROJECT_ROOT, DB_PATH, TEXT_DIR, get_db_connection
+from config import CONFIG, PROJECT_ROOT, DB_PATH, get_db_connection
 
 console = Console()
 
