@@ -142,6 +142,10 @@ report:
   max_papers_per_stream: 10
   include_abstract_preview: true
   abstract_preview_length: 300
+  
+# GitHub settings (for feedback issues)
+github:
+  repo: johnplake/daily-briefs
 
 # Dashboard settings
 dashboard:

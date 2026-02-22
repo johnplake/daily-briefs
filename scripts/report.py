@@ -23,8 +23,8 @@ from config import CONFIG, PROJECT_ROOT, FILTERED_DIR, REPORTS_DIR, validate_dat
 
 console = Console()
 
-# GitHub repo for feedback issues
-GITHUB_REPO = "johnplake/daily-briefs"
+# GitHub repo for feedback issues (from config)
+GITHUB_REPO = CONFIG.get("github", {}).get("repo", "johnplake/daily-briefs")
 
 
 def load_filtered_results(results_path: Path) -> dict:
@@ -77,8 +77,11 @@ def generate_selection_reason(paper: dict) -> str:
     return "; ".join(reasons)
 
 
-def generate_feedback_url(paper: dict, stream: str, date: str) -> str:
-    """Generate GitHub Issue URL for feedback."""
+def generate_feedback_url(paper: dict, stream: str, date: str) -> str | None:
+    """Generate GitHub Issue URL for feedback. Returns None if github.repo not configured."""
+    if not GITHUB_REPO:
+        return None
+        
     paper_id = paper.get("paper_id", "unknown")
     title = (paper.get("title", "Unknown") or "Unknown")[:80]
     
@@ -178,7 +181,10 @@ def generate_report(results: dict, date: str, config: dict) -> str:
             lines.append("")
             lines.append(f"**Why selected:** {reason}")
             lines.append("")
-            lines.append(f"📄 [PDF]({pdf_url}) | 💬 [Feedback]({feedback_url})")
+            if feedback_url:
+                lines.append(f"📄 [PDF]({pdf_url}) | 💬 [Feedback]({feedback_url})")
+            else:
+                lines.append(f"📄 [PDF]({pdf_url})")
             lines.append("")
             lines.append("---")
             lines.append("")
@@ -203,7 +209,10 @@ def generate_report(results: dict, date: str, config: dict) -> str:
             arxiv_url = paper.get("arxiv_url", f"https://arxiv.org/abs/{paper_id}")
             feedback_url = generate_feedback_url(paper, "Near-miss", date)
             
-            lines.append(f"- [{title}]({arxiv_url}) ([Feedback]({feedback_url}))")
+            if feedback_url:
+                lines.append(f"- [{title}]({arxiv_url}) ([Feedback]({feedback_url}))")
+            else:
+                lines.append(f"- [{title}]({arxiv_url})")
         
         lines.append("")
     
@@ -221,7 +230,10 @@ def generate_report(results: dict, date: str, config: dict) -> str:
             arxiv_url = paper.get("arxiv_url", f"https://arxiv.org/abs/{paper_id}")
             feedback_url = generate_feedback_url(paper, "Random-negative", date)
             
-            lines.append(f"- [{title}]({arxiv_url}) ([Feedback]({feedback_url}))")
+            if feedback_url:
+                lines.append(f"- [{title}]({arxiv_url}) ([Feedback]({feedback_url}))")
+            else:
+                lines.append(f"- [{title}]({arxiv_url})")
         
         lines.append("")
     
