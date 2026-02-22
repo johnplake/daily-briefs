@@ -20,7 +20,7 @@ import io
 from datetime import datetime
 
 # Import config (app.py is now in scripts/ alongside config.py)
-from config import DB_PATH, get_db_connection, PROJECT_ROOT
+from config import CONFIG, DB_PATH, get_db_connection, PROJECT_ROOT
 
 def load_papers(include_hidden: bool = False):
     """Load all papers with UMAP coordinates."""
@@ -431,8 +431,13 @@ def toggle_hide_paper(n_clicks, paper_id):
     return datetime.utcnow().isoformat()
 
 if __name__ == '__main__':
+    # Get dashboard settings from config
+    dashboard_config = CONFIG.get('dashboard', {})
+    host = dashboard_config.get('host', '127.0.0.1')
+    port = dashboard_config.get('port', 8050)
+    
     print(f"📊 Loaded {len(df)} papers")
     print(f"📁 Database: {DB_PATH}")
-    print(f"🌐 Starting dashboard on http://0.0.0.0:8050")
-    print(f"📱 For Terminus: ssh -L 8050:localhost:8050 user@server")
-    app.run(debug=False, host='0.0.0.0', port=8050)
+    print(f"🌐 Starting dashboard on http://{host}:{port}")
+    print(f"📱 For Terminus: ssh -L {port}:localhost:{port} user@server")
+    app.run(debug=False, host=host, port=port)

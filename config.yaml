@@ -141,3 +141,8 @@ report:
   max_papers_per_stream: 10
   include_abstract_preview: true
   abstract_preview_length: 300
+
+# Dashboard settings
+dashboard:
+  host: 127.0.0.1
+  port: 8050
