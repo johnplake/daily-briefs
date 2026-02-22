@@ -7,8 +7,7 @@ Idempotent - safe to run multiple times.
 import sqlite3
 from pathlib import Path
 
-# Database location
-DB_PATH = Path(__file__).parent.parent / "data" / "papers.db"
+from config import DB_PATH
 
 
 SCHEMA = """

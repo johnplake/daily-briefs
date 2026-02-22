@@ -7,9 +7,9 @@ import numpy as np
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
-INDEX_PATH = PROJECT_ROOT / "data" / "embeddings" / "faiss.index"
+from config import DB_PATH, EMBEDDINGS_DIR
+
+INDEX_PATH = EMBEDDINGS_DIR / "faiss.index"
 
 # Load database
 conn = sqlite3.connect(DB_PATH)

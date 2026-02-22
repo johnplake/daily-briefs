@@ -1,5 +1,15 @@
 # Daily Briefs Configuration
 
+# Paths (all relative to root, or absolute)
+# If root is not specified, defaults to the directory containing config.yaml
+paths:
+  root: /home/node/.openclaw/workspace/Projects/daily-briefs
+  db: data/papers.db
+  text: data/text/
+  embeddings: data/embeddings/
+  filtered: data/filtered/
+  reports: reports/
+
 # arXiv category tiers
 categories:
   tier1:  # Primary focus - high recall

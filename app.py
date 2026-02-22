@@ -19,15 +19,12 @@ from pathlib import Path
 import io
 from datetime import datetime
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
-
-def get_db_connection():
-    """Get database connection."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+# Import config - app.py is in project root, scripts/config.py expects to be in scripts/
+# So we need to handle this carefully
+import os
+import sys
+sys.path.insert(0, str(Path(__file__).parent / "scripts"))
+from config import DB_PATH, get_db_connection, PROJECT_ROOT
 
 def load_papers(include_hidden: bool = False):
     """Load all papers with UMAP coordinates."""

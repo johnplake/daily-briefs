@@ -18,23 +18,14 @@ from rich.console import Console
 from rich.table import Table
 from sentence_transformers import SentenceTransformer
 
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection
+
 console = Console()
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
-INDEX_DIR = PROJECT_ROOT / "data" / "embeddings"
+# Use EMBEDDINGS_DIR from config
+INDEX_DIR = EMBEDDINGS_DIR
 
 MODEL_NAME = "sentence-transformers/allenai-specter"
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection."""
-    if not DB_PATH.exists():
-        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def load_index() -> faiss.Index | None:

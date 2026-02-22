@@ -30,21 +30,12 @@ def validate_date(date_str: str) -> str:
 import yaml
 from rich.console import Console
 
-console = Console()
+from config import CONFIG, PROJECT_ROOT, FILTERED_DIR, REPORTS_DIR
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
+console = Console()
 
 # GitHub repo for feedback issues
 GITHUB_REPO = "johnplake/daily-briefs"
-
-
-def load_config(config_path: str = None) -> dict:
-    """Load configuration from YAML file."""
-    if config_path is None:
-        config_path = PROJECT_ROOT / "config.yaml"
-    with open(config_path) as f:
-        return yaml.safe_load(f)
 
 
 def load_filtered_results(results_path: Path) -> dict:
@@ -266,10 +257,15 @@ def main():
     
     console.print(f"[bold green]Generating report for {target_date}[/bold green]")
     
-    config = load_config(args.config)
+    # Use shared config (respects DAILY_BRIEFS_CONFIG env var)
+    if args.config:
+        with open(args.config) as f:
+            config = yaml.safe_load(f)
+    else:
+        config = CONFIG
     
-    input_path = Path(args.input) if args.input else PROJECT_ROOT / "data" / "filtered" / f"{target_date}.json"
-    output_path = Path(args.output) if args.output else PROJECT_ROOT / "reports" / f"{target_date}.md"
+    input_path = Path(args.input) if args.input else FILTERED_DIR / f"{target_date}.json"
+    output_path = Path(args.output) if args.output else REPORTS_DIR / f"{target_date}.md"
     
     if not input_path.exists():
         console.print(f"[red]Filtered results not found: {input_path}[/red]")

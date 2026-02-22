@@ -36,28 +36,9 @@ import yaml
 from rich.console import Console
 from rich.table import Table
 
+from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, get_db_connection
+
 console = Console()
-
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
-
-
-def load_config(config_path: str = None) -> dict:
-    """Load configuration from YAML file."""
-    if config_path is None:
-        config_path = PROJECT_ROOT / "config.yaml"
-    with open(config_path) as f:
-        return yaml.safe_load(f)
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection."""
-    if not DB_PATH.exists():
-        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list:
@@ -305,7 +286,12 @@ def main():
     
     console.print(f"[bold green]Filtering papers for {target_date}[/bold green]")
     
-    config = load_config(args.config)
+    # Use shared config (respects DAILY_BRIEFS_CONFIG env var)
+    if args.config:
+        with open(args.config) as f:
+            config = yaml.safe_load(f)
+    else:
+        config = CONFIG
     conn = get_db_connection()
     
     papers = get_papers_for_date(conn, target_date)
@@ -320,9 +306,8 @@ def main():
     print_summary(results)
     
     # Save results
-    output_dir = PROJECT_ROOT / "data" / "filtered"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = Path(args.output) if args.output else output_dir / f"{target_date}.json"
+    FILTERED_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = Path(args.output) if args.output else FILTERED_DIR / f"{target_date}.json"
     
     save_filtered_results(results, output_path)
     console.print(f"\n[bold green]✓ Saved filtered results to {output_path}[/bold green]")

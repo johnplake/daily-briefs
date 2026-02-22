@@ -29,11 +29,9 @@ import requests
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-console = Console()
+from config import PROJECT_ROOT, DB_PATH, get_db_connection
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
+console = Console()
 
 # API endpoints
 S2_API = "https://api.semanticscholar.org/graph/v1/paper"
@@ -42,15 +40,6 @@ OPENALEX_API = "https://api.openalex.org/works"
 # Rate limits
 S2_DELAY = 0.15  # ~6-7 requests/second
 OPENALEX_DELAY = 0.1  # 10 requests/second
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection."""
-    if not DB_PATH.exists():
-        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def fetch_s2_citations(arxiv_id: str) -> int | None:

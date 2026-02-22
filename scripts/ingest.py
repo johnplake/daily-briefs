@@ -29,15 +29,12 @@ def validate_date(date_str: str) -> str:
 
 import feedparser
 import requests
-import yaml
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-console = Console()
+from config import CONFIG, PROJECT_ROOT, DB_PATH, TEXT_DIR, get_db_connection
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
+console = Console()
 
 # arXiv endpoints
 ARXIV_RSS = "https://export.arxiv.org/rss/{}"
@@ -46,29 +43,12 @@ ARXIV_RSS = "https://export.arxiv.org/rss/{}"
 RATE_LIMIT_SECONDS = 1
 
 
-def load_config(config_path: str = None) -> dict:
-    """Load configuration from YAML file."""
-    if config_path is None:
-        config_path = PROJECT_ROOT / "config.yaml"
-    with open(config_path) as f:
-        return yaml.safe_load(f)
-
-
 def get_all_categories(config: dict) -> list:
     """Get all categories from all tiers."""
     cats = []
     for tier in ["tier1", "tier2", "tier3"]:
         cats.extend(config["categories"].get(tier, []))
     return cats
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection."""
-    if not DB_PATH.exists():
-        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
@@ -399,8 +379,14 @@ def main():
     
     console.print(f"[bold green]arXiv RSS Ingestion for {announced_date}[/bold green]")
     
-    # Load config
-    config = load_config(args.config)
+    # Use shared config (respects DAILY_BRIEFS_CONFIG env var)
+    # CLI --config flag can override if needed
+    if args.config:
+        import yaml
+        with open(args.config) as f:
+            config = yaml.safe_load(f)
+    else:
+        config = CONFIG
     
     # Determine categories
     if args.categories:

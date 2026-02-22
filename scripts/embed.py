@@ -33,28 +33,19 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from sentence_transformers import SentenceTransformer
 
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection
+
 # Import UMAP functions from project.py
 from project import load_embeddings_and_ids, run_umap, update_coordinates
 
 console = Console()
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
-INDEX_DIR = PROJECT_ROOT / "data" / "embeddings"
+# Use EMBEDDINGS_DIR from config
+INDEX_DIR = EMBEDDINGS_DIR
 
 # SPECTER model for scientific papers
 MODEL_NAME = "sentence-transformers/allenai-specter"
 EMBEDDING_DIM = 768
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection."""
-    if not DB_PATH.exists():
-        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def get_current_index_size() -> int:

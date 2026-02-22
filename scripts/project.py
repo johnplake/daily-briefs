@@ -19,12 +19,12 @@ import numpy as np
 from rich.console import Console
 from umap import UMAP
 
+from config import PROJECT_ROOT, DB_PATH, EMBEDDINGS_DIR, get_db_connection
+
 console = Console()
 
-# Project paths
-PROJECT_ROOT = Path(__file__).parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "papers.db"
-INDEX_PATH = PROJECT_ROOT / "data" / "embeddings" / "faiss.index"
+# Derived paths
+INDEX_PATH = EMBEDDINGS_DIR / "faiss.index"
 
 
 def validate_date(date_str: str) -> str:
@@ -35,15 +35,6 @@ def validate_date(date_str: str) -> str:
     except ValueError:
         print(f"Error: Invalid date format '{date_str}'. Expected YYYY-MM-DD.")
         sys.exit(1)
-
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection."""
-    if not DB_PATH.exists():
-        raise RuntimeError(f"Database not found at {DB_PATH}. Run init_db.py first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]:
