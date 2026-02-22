@@ -134,19 +134,21 @@ def get_papers_to_enrich(conn: sqlite3.Connection, date_filter: str = None,
                          force_update: bool = False, limit: int = None) -> list:
     """Get papers that need citation enrichment."""
     query = "SELECT id, paper_id FROM papers WHERE paper_source = 'arxiv'"
+    params = []
     
     if not force_update:
         query += " AND (citations_s2 IS NULL OR citations_oa IS NULL)"
     
     if date_filter:
-        query += f" AND announced_date = '{date_filter}'"
+        query += " AND announced_date = ?"
+        params.append(date_filter)
     
     query += " ORDER BY announced_date DESC"
     
     if limit:
         query += f" LIMIT {limit}"
     
-    cursor = conn.execute(query)
+    cursor = conn.execute(query, params)
     return cursor.fetchall()
 
 
