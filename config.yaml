@@ -183,6 +183,7 @@ search:
 apis:
   arxiv:
     rate_limit_seconds: 1.0    # Delay between RSS feed fetches
+    retry_base_seconds: 5.0    # Base seconds for exponential backoff (2^attempt * base)
     
   semantic_scholar:
     enabled: true

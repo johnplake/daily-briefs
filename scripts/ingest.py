@@ -58,7 +58,7 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
         try:
             response = requests.get(url, timeout=30)
             if response.status_code == HTTP_RATE_LIMITED:
-                wait_time = (2 ** attempt) * 5
+                wait_time = (2 ** attempt) * APIS["arxiv_retry_base_seconds"]
                 logger.warning(f"Rate limited on {category}. Waiting {wait_time}s...")
                 console.print(f"[yellow]Rate limited on {category}. Waiting {wait_time}s...[/yellow]")
                 time.sleep(wait_time)

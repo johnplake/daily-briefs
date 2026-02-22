@@ -6,6 +6,8 @@ Projects paper embeddings from 768-dim to 2D for visualization.
 Refits on all papers each run (coordinates may shift between runs).
 
 Stores results in umap_x, umap_y columns in the papers table.
+
+NOTE: File name is historical; this module only handles UMAP projection.
 """
 
 import argparse

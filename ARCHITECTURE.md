@@ -129,7 +129,9 @@ CREATE TRIGGER papers_ad AFTER DELETE ON papers BEGIN
     VALUES ('delete', old.id, old.paper_id, old.title, old.abstract);
 END;
 
-CREATE TRIGGER papers_au AFTER UPDATE ON papers BEGIN
+CREATE TRIGGER papers_au AFTER UPDATE ON papers
+WHEN old.title != new.title OR old.abstract != new.abstract
+BEGIN
     INSERT INTO papers_fts(papers_fts, rowid, paper_id, title, abstract)
     VALUES ('delete', old.id, old.paper_id, old.title, old.abstract);
     INSERT INTO papers_fts(rowid, paper_id, title, abstract)

@@ -207,6 +207,7 @@ def get_api_config(config: dict = None) -> dict:
     apis = config.get("apis", {})
     return {
         "arxiv_rate_limit": apis.get("arxiv", {}).get("rate_limit_seconds", 1.0),
+        "arxiv_retry_base_seconds": apis.get("arxiv", {}).get("retry_base_seconds", 5.0),
         "s2_enabled": apis.get("semantic_scholar", {}).get("enabled", True),
         "s2_delay": apis.get("semantic_scholar", {}).get("delay_seconds", 0.15),
         "oa_enabled": apis.get("openalex", {}).get("enabled", True),
