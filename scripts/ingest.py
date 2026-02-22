@@ -26,8 +26,10 @@ from config import (
     HTTP_RATE_LIMITED,
     get_db_connection, validate_date
 )
+from logging_config import setup_logging
 
 console = Console()
+logger = setup_logging("ingest")
 
 # arXiv endpoints
 ARXIV_RSS = "https://export.arxiv.org/rss/{}"
@@ -53,6 +55,7 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
             response = requests.get(url, timeout=30)
             if response.status_code == HTTP_RATE_LIMITED:
                 wait_time = (2 ** attempt) * 5
+                logger.warning(f"Rate limited on {category}. Waiting {wait_time}s...")
                 console.print(f"[yellow]Rate limited on {category}. Waiting {wait_time}s...[/yellow]")
                 time.sleep(wait_time)
                 continue
@@ -64,9 +67,11 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
         except requests.exceptions.RequestException as e:
             if attempt < max_retries - 1:
                 wait_time = (2 ** attempt) * 2
+                logger.warning(f"Error fetching {category}: {e}. Retrying in {wait_time}s...")
                 console.print(f"[yellow]Error fetching {category}: {e}. Retrying in {wait_time}s...[/yellow]")
                 time.sleep(wait_time)
             else:
+                logger.error(f"Failed to fetch {category} after {max_retries} attempts")
                 console.print(f"[red]Failed to fetch {category} after {max_retries} attempts[/red]")
                 return []
     
@@ -233,14 +238,17 @@ def extract_text_from_pdf(pdf_path: Path) -> str | None:
         return "\n\n".join(text_parts)
     except (fitz.FileDataError, fitz.EmptyFileError, fitz.FileNotFoundError) as e:
         # Expected PDF errors - log and continue
+        logger.warning(f"Invalid PDF {pdf_path}: {e}")
         console.print(f"[yellow]Invalid PDF {pdf_path}: {e}[/yellow]")
         return None
-    except MemoryError as e:
+    except MemoryError:
         # Large PDF exhausted memory - log and continue (don't crash batch)
+        logger.error(f"Out of memory extracting {pdf_path}")
         console.print(f"[red]Out of memory extracting {pdf_path}[/red]")
         return None
     except Exception as e:
         # Unexpected error - log loudly but continue batch processing
+        logger.error(f"Unexpected error extracting {pdf_path}: {type(e).__name__}: {e}", exc_info=True)
         console.print(f"[red]Unexpected error extracting {pdf_path}: {type(e).__name__}: {e}[/red]")
         return None
 
@@ -277,6 +285,7 @@ def download_and_extract_text(paper: dict) -> bool:
             return False
             
     except Exception as e:
+        logger.warning(f"Failed to download {paper['paper_id']}: {e}")
         console.print(f"[yellow]Failed to download {paper['paper_id']}: {e}[/yellow]")
         pdf_path.unlink(missing_ok=True)
         return False
@@ -379,6 +388,7 @@ def main():
     # Determine date
     announced_date = validate_date(args.date) if args.date else datetime.now().strftime("%Y-%m-%d")
     
+    logger.info(f"Starting ingestion for {announced_date}")
     console.print(f"[bold green]arXiv RSS Ingestion for {announced_date}[/bold green]")
     
     # Use shared config (set DAILY_BRIEFS_CONFIG env var to override)
@@ -400,6 +410,7 @@ def main():
     console.print(f"\n[bold]Total unique papers: {len(papers)}[/bold]")
     
     if not papers:
+        logger.info(f"No papers found for {announced_date}")
         console.print("[yellow]No papers found.[/yellow]")
         return
     
@@ -463,6 +474,12 @@ def main():
     
     conn.commit()
     conn.close()
+    
+    # Log summary
+    summary = f"Ingestion complete: inserted={stats['inserted']}, updated={stats['updated']}, unchanged={stats['unchanged']}"
+    if extract_text:
+        summary += f", text_extracted={stats['text_extracted']}"
+    logger.info(summary)
     
     console.print(f"\n[bold green]✓ Ingestion complete[/bold green]")
     console.print(f"  Inserted: {stats['inserted']}")
