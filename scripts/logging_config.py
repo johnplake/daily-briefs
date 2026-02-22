@@ -1,7 +1,7 @@
 """
 Centralized logging configuration for daily-briefs.
 
-Logs to both console and file (data/logs/daily-briefs.log).
+Logs to both console and file (configured logs directory).
 """
 
 import logging
@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from config import PROJECT_ROOT
+from config import LOGS_DIR
 
 
 def setup_logging(name: str = "daily-briefs", level: int = logging.INFO) -> logging.Logger:
@@ -24,11 +24,10 @@ def setup_logging(name: str = "daily-briefs", level: int = logging.INFO) -> logg
         Configured logger
     """
     # Create logs directory
-    log_dir = PROJECT_ROOT / "data" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
     
     # Log file with date
-    log_file = log_dir / f"daily-briefs-{datetime.now().strftime('%Y-%m')}.log"
+    log_file = LOGS_DIR / f"daily-briefs-{datetime.now().strftime('%Y-%m')}.log"
     
     # Create logger
     logger = logging.getLogger(name)

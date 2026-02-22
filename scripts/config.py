@@ -100,6 +100,7 @@ def load_config() -> dict:
         "embeddings": root / paths.get("embeddings", "data/embeddings/"),
         "filtered": root / paths.get("filtered", "data/filtered/"),
         "reports": root / paths.get("reports", "reports/"),
+        "logs": root / paths.get("logs", "data/logs/"),
         "config_path": config_path,
     }
     
@@ -140,3 +141,4 @@ TEXT_DIR = CONFIG["_resolved"]["text"]
 EMBEDDINGS_DIR = CONFIG["_resolved"]["embeddings"]
 FILTERED_DIR = CONFIG["_resolved"]["filtered"]
 REPORTS_DIR = CONFIG["_resolved"]["reports"]
+LOGS_DIR = CONFIG["_resolved"]["logs"]

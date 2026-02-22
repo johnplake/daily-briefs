@@ -9,6 +9,7 @@ paths:
   embeddings: data/embeddings/
   filtered: data/filtered/
   reports: reports/
+  logs: data/logs/
 
 # arXiv category tiers
 categories:
