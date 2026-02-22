@@ -14,6 +14,49 @@ from pathlib import Path
 import yaml
 
 
+class ConfigError(Exception):
+    """Raised when config validation fails."""
+    pass
+
+
+def validate_config(config: dict, config_path: Path) -> None:
+    """
+    Validate config has required sections and fields.
+    Raises ConfigError with helpful message if validation fails.
+    """
+    errors = []
+    
+    # Required: paths.root (or we can't find data)
+    if "paths" not in config:
+        errors.append("Missing 'paths' section")
+    elif "root" not in config["paths"]:
+        errors.append("Missing 'paths.root' - must specify data directory")
+    
+    # Required: categories with at least one tier
+    if "categories" not in config:
+        errors.append("Missing 'categories' section")
+    else:
+        cats = config["categories"]
+        has_categories = any(
+            cats.get(tier) for tier in ["tier1", "tier2", "tier3"]
+        )
+        if not has_categories:
+            errors.append("'categories' must have at least one of: tier1, tier2, tier3")
+    
+    # Optional but warn: interests
+    if "interests" not in config:
+        # Just a warning, not an error - filtering will work without it
+        pass
+    
+    # Optional with defaults: filtering, report, dashboard
+    # These have sensible defaults in the scripts, so not required
+    
+    if errors:
+        error_msg = f"Config validation failed for {config_path}:\n"
+        error_msg += "\n".join(f"  - {e}" for e in errors)
+        raise ConfigError(error_msg)
+
+
 def load_config() -> dict:
     """
     Load configuration from YAML file.
@@ -35,6 +78,9 @@ def load_config() -> dict:
     
     with open(config_path) as f:
         config = yaml.safe_load(f)
+    
+    # Validate required sections
+    validate_config(config, config_path)
     
     # Resolve paths section
     paths = config.get("paths", {})
