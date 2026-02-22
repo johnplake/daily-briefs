@@ -138,7 +138,7 @@ def generate_report(results: dict, date: str, config: dict) -> str:
     # Header
     lines.append(f"# Daily Brief: {date}")
     lines.append("")
-    lines.append(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}*")
+    lines.append(f"*Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}*")
     lines.append("")
     
     # Stats
@@ -247,7 +247,6 @@ def generate_report(results: dict, date: str, config: dict) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Generate daily report")
     parser.add_argument("--date", required=True, help="Date for report (YYYY-MM-DD)")
-    parser.add_argument("--config", help="Config file path")
     parser.add_argument("--input", help="Input filtered JSON (default: data/filtered/YYYY-MM-DD.json)")
     parser.add_argument("--output", help="Output report path (default: reports/YYYY-MM-DD.md)")
     args = parser.parse_args()
@@ -257,12 +256,8 @@ def main():
     
     console.print(f"[bold green]Generating report for {target_date}[/bold green]")
     
-    # Use shared config (respects DAILY_BRIEFS_CONFIG env var)
-    if args.config:
-        with open(args.config) as f:
-            config = yaml.safe_load(f)
-    else:
-        config = CONFIG
+    # Use shared config (set DAILY_BRIEFS_CONFIG env var to override)
+    config = CONFIG
     
     input_path = Path(args.input) if args.input else FILTERED_DIR / f"{target_date}.json"
     output_path = Path(args.output) if args.output else REPORTS_DIR / f"{target_date}.md"

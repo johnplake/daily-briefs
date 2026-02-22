@@ -126,13 +126,15 @@ def search_similar(paper_id: str, index: faiss.Index, conn: sqlite3.Connection,
     return results[:k]
 
 
-def search_fulltext(query: str, conn: sqlite3.Connection, k: int = 10) -> list:
+def search_fulltext(query: str, conn: sqlite3.Connection, k: int = 10, include_hidden: bool = False) -> list:
     """Full-text search using FTS5."""
+    where_hidden = "" if include_hidden else "AND p.hidden = 0"
     cursor = conn.execute(
-        """SELECT p.*, bm25(papers_fts) as score 
+        f"""SELECT p.*, bm25(papers_fts) as score 
            FROM papers p
            JOIN papers_fts fts ON p.id = fts.rowid
            WHERE papers_fts MATCH ?
+           {where_hidden}
            ORDER BY score
            LIMIT ?""",
         (query, k)

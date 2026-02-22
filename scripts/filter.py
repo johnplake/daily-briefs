@@ -277,7 +277,6 @@ def print_summary(results: dict):
 def main():
     parser = argparse.ArgumentParser(description="Filter papers into streams")
     parser.add_argument("--date", required=True, help="Date to filter (YYYY-MM-DD)")
-    parser.add_argument("--config", help="Config file path")
     parser.add_argument("--output", help="Output JSON path (default: data/filtered/YYYY-MM-DD.json)")
     args = parser.parse_args()
     
@@ -286,12 +285,8 @@ def main():
     
     console.print(f"[bold green]Filtering papers for {target_date}[/bold green]")
     
-    # Use shared config (respects DAILY_BRIEFS_CONFIG env var)
-    if args.config:
-        with open(args.config) as f:
-            config = yaml.safe_load(f)
-    else:
-        config = CONFIG
+    # Use shared config (set DAILY_BRIEFS_CONFIG env var to override)
+    config = CONFIG
     conn = get_db_connection()
     
     papers = get_papers_for_date(conn, target_date)

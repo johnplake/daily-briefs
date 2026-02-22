@@ -318,7 +318,20 @@ def display_paper_details(clickData, filtered_data_json):
     
     # Use stable ID from customdata to avoid trace index mismatch
     clicked_id = clickData['points'][0]['customdata'][0]
-    paper = filtered_df[filtered_df['id'] == clicked_id].iloc[0]
+    matching = filtered_df[filtered_df['id'] == clicked_id]
+    
+    # Handle stale selection (paper no longer in filtered data)
+    if matching.empty:
+        return html.Div([
+            html.H3("Paper Details", style={'color': '#2c3e50', 'borderBottom': '2px solid #3498db'}),
+            html.P("Paper not found (may have been filtered out or hidden)", style={
+                'color': '#e74c3c',
+                'fontStyle': 'italic',
+                'marginTop': '20px'
+            })
+        ]), None
+    
+    paper = matching.iloc[0]
     
     hidden = int(paper.get('hidden', 0))
     btn_label = "Unhide this paper" if hidden else "Hide this paper"

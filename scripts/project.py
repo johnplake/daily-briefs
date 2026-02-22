@@ -65,7 +65,9 @@ def load_embeddings_and_ids(conn: sqlite3.Connection) -> tuple[np.ndarray, list]
     papers = cursor.fetchall()
     
     if len(papers) != n_vectors:
-        console.print(f"[yellow]Warning: {len(papers)} papers with embeddings, but {n_vectors} vectors in index[/yellow]")
+        console.print(f"[red]Error: {len(papers)} papers with embeddings, but {n_vectors} vectors in FAISS index[/red]")
+        console.print("[red]This indicates a mismatch between DB and index. Run embed.py --rebuild to fix.[/red]")
+        raise RuntimeError(f"DB/FAISS mismatch: {len(papers)} papers vs {n_vectors} vectors")
     
     return embeddings, [(row["id"], row["embedding_idx"]) for row in papers]
 

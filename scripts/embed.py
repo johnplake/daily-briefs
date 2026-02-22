@@ -138,8 +138,8 @@ def main():
     # Handle rebuild
     if args.rebuild:
         console.print("[yellow]Rebuilding index from scratch[/yellow]")
-        # Clear all embedding_idx values
-        conn.execute("UPDATE papers SET embedding_idx = NULL")
+        # Clear all embedding_idx and UMAP coordinates
+        conn.execute("UPDATE papers SET embedding_idx = NULL, umap_x = NULL, umap_y = NULL")
         conn.commit()
         # Delete existing index
         index_path = INDEX_DIR / "faiss.index"

@@ -367,7 +367,6 @@ def upsert_paper(conn: sqlite3.Connection, paper: dict, text_extracted: bool) ->
 def main():
     parser = argparse.ArgumentParser(description="Ingest arXiv papers from RSS feeds")
     parser.add_argument("--date", help="Date label for storage (YYYY-MM-DD). Default: today")
-    parser.add_argument("--config", help="Config file path")
     parser.add_argument("--extract-text", action="store_true", help="Extract text from PDFs")
     parser.add_argument("--categories", help="Comma-separated list of categories (overrides config)")
     parser.add_argument("--tier", type=int, choices=[1, 2, 3], help="Only fetch specific tier")
@@ -379,14 +378,8 @@ def main():
     
     console.print(f"[bold green]arXiv RSS Ingestion for {announced_date}[/bold green]")
     
-    # Use shared config (respects DAILY_BRIEFS_CONFIG env var)
-    # CLI --config flag can override if needed
-    if args.config:
-        import yaml
-        with open(args.config) as f:
-            config = yaml.safe_load(f)
-    else:
-        config = CONFIG
+    # Use shared config (set DAILY_BRIEFS_CONFIG env var to override)
+    config = CONFIG
     
     # Determine categories
     if args.categories:
