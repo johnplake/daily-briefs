@@ -174,8 +174,8 @@ def filter_papers(papers: list, config: dict) -> dict:
     scored_papers = []
     for paper in papers:
         scores = compute_combined_score(paper, config)
-        paper.update(scores)
-        scored_papers.append(paper)
+        scored_paper = {**paper, **scores}
+        scored_papers.append(scored_paper)
     
     def get_threshold(paper):
         tier = paper["tier"]
