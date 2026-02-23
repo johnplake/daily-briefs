@@ -210,7 +210,8 @@ def main():
 
         console.print(f"[cyan]Generating embeddings (batch size: {args.batch_size})...[/cyan]")
 
-        all_embeddings = []
+        # Pre-allocate array to avoid holding all batches in memory twice
+        new_embeddings = np.zeros((len(texts), EMBEDDING_DIM), dtype='float32')
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -220,11 +221,10 @@ def main():
             for i in range(0, len(texts), args.batch_size):
                 batch = texts[i:i + args.batch_size]
                 batch_embeddings = model.encode(batch, show_progress_bar=False)
-                all_embeddings.append(batch_embeddings)
+                new_embeddings[i:i + len(batch)] = batch_embeddings
                 progress.update(task, advance=len(batch),
                                description=f"Embedding {min(i + args.batch_size, len(texts))}/{len(texts)}...")
 
-        new_embeddings = np.vstack(all_embeddings).astype('float32')
         faiss.normalize_L2(new_embeddings)
 
         expected_total = index.ntotal + len(new_embeddings)
