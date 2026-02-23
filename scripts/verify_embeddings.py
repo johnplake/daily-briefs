@@ -7,9 +7,10 @@ import numpy as np
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 
-from config import DB_PATH, EMBEDDINGS_DIR
+from config import DB_PATH, EMBEDDINGS_DIR, EMBEDDINGS
 
 INDEX_PATH = EMBEDDINGS_DIR / "faiss.index"
+MODEL_NAME = EMBEDDINGS["model_name"]
 
 # Load database
 conn = sqlite3.connect(DB_PATH)
@@ -70,7 +71,7 @@ for p in papers:
 
 # Verify mapping by re-embedding papers and checking similarity
 print("\n--- Verification: Re-embed and check similarity ---")
-model = SentenceTransformer("sentence-transformers/allenai-specter")
+model = SentenceTransformer(MODEL_NAME)
 
 # Sample 5 papers randomly
 samples = conn.execute("""
