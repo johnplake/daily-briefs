@@ -146,12 +146,12 @@ END;
 -- Simple search
 SELECT p.* FROM papers p
 JOIN papers_fts fts ON p.id = fts.rowid
-WHERE papers_fts MATCH 'transformer attention';
+WHERE fts MATCH 'transformer attention';
 
 -- Ranked by relevance
-SELECT p.*, bm25(papers_fts) as score FROM papers p
+SELECT p.*, bm25(fts) as score FROM papers p
 JOIN papers_fts fts ON p.id = fts.rowid
-WHERE papers_fts MATCH 'language model'
+WHERE fts MATCH 'language model'
 ORDER BY score;
 ```
 
