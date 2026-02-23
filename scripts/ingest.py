@@ -17,6 +17,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from email.utils import parsedate_to_datetime
 
 import feedparser
 import requests
@@ -109,6 +110,18 @@ def extract_arxiv_id(entry: dict) -> tuple[str, int]:
     return arxiv_id, version
 
 
+def _parse_rss_date(value: str | None, label: str) -> str | None:
+    """Parse RSS date strings into YYYY-MM-DD; return None if malformed."""
+    if not value:
+        return None
+    try:
+        dt = parsedate_to_datetime(value)
+        return dt.strftime("%Y-%m-%d")
+    except (TypeError, ValueError) as e:
+        logger.warning(f"Failed to parse {label} date '{value}': {e}")
+        return None
+
+
 def parse_entry(entry: dict[str, Any], category: str, announced_date: str) -> dict[str, Any]:
     """Parse a single RSS entry into our metadata format."""
     arxiv_id, version = extract_arxiv_id(entry)
@@ -143,21 +156,12 @@ def parse_entry(entry: dict[str, Any], category: str, announced_date: str) -> di
         if term and term not in categories:
             categories.append(term)
     
-    # Parse dates
+    # Parse dates (RSS may be RFC 2822)
     published = entry.get("published", entry.get("pubDate", ""))
     updated = entry.get("updated", published)
     
-    # Try to extract date only
-    submitted_date = None
-    if published:
-        try:
-            # RSS dates are often RFC 2822 format
-            from email.utils import parsedate_to_datetime
-            dt = parsedate_to_datetime(published)
-            submitted_date = dt.strftime("%Y-%m-%d")
-        except (TypeError, ValueError) as e:
-            logger.warning(f"Failed to parse published date '{published}': {e}")
-            submitted_date = None
+    submitted_date = _parse_rss_date(published, "published")
+    updated_date = _parse_rss_date(updated, "updated")
     
     # DOI if present
     doi = entry.get("arxiv_doi", entry.get("doi", ""))
@@ -173,7 +177,8 @@ def parse_entry(entry: dict[str, Any], category: str, announced_date: str) -> di
         "categories": json.dumps(categories),
         "version": version,
         "submitted_date": submitted_date,
-        "updated_date": announced_date if version > 1 else None,
+        # Prefer parsed updated date; fallback to announced_date for version updates
+        "updated_date": updated_date or (announced_date if version > 1 else None),
         "arxiv_url": f"https://arxiv.org/abs/{arxiv_id}",
         "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf",
         "doi": doi,
