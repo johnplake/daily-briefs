@@ -81,10 +81,11 @@ def search_papers(query_text: str, include_hidden: bool = False) -> pd.DataFrame
             p.umap_x, p.umap_y, p.hidden
         FROM papers p
         JOIN papers_fts fts ON p.id = fts.rowid
-        WHERE papers_fts MATCH ?
+        WHERE fts MATCH ?
           AND p.umap_x IS NOT NULL
+          AND p.umap_y IS NOT NULL
           {where_hidden}
-        ORDER BY bm25(papers_fts)
+        ORDER BY bm25(fts)
         LIMIT {MAX_SEARCH_RESULTS}
     """
     
