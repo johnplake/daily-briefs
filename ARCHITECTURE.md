@@ -275,6 +275,18 @@ When a paper originally discovered on arXiv gets published at a conference (e.g.
 
 ---
 
+## Operational Notes
+
+### SQLite WAL Mode
+
+Connections use `PRAGMA journal_mode=WAL` and `PRAGMA synchronous=NORMAL` for better concurrency (readers + one writer). Expect `papers.db-wal` and `papers.db-shm` files alongside `papers.db`.
+
+### Embedding Atomicity Marker
+
+`embed.py` writes a marker file (`data/embeddings/embed_in_progress.json`) before adding vectors to FAISS and updating DB. If the process crashes mid‑write, the marker remains and **embed refuses to append** unless `--rebuild` is used. This prevents silent FAISS/DB divergence.
+
+---
+
 ## Extensibility
 
 The schema is easy to extend:
