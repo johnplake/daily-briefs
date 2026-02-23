@@ -37,6 +37,14 @@ logger = setup_logging("ingest")
 # NOTE: We log to file *and* print to console intentionally.
 # Console output is for live runs; logs are for audit/debugging later.
 
+def log_warn(msg: str):
+    logger.warning(msg)
+    console.print(f"[yellow]{msg}[/yellow]")
+
+def log_error(msg: str):
+    logger.error(msg)
+    console.print(f"[red]{msg}[/red]")
+
 # arXiv endpoints
 ARXIV_RSS = "https://export.arxiv.org/rss/{}"
 
@@ -61,8 +69,7 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
             response = requests.get(url, timeout=30)
             if response.status_code == HTTP_RATE_LIMITED:
                 wait_time = (2 ** attempt) * APIS["arxiv_retry_base_seconds"]
-                logger.warning(f"Rate limited on {category}. Waiting {wait_time}s...")
-                console.print(f"[yellow]Rate limited on {category}. Waiting {wait_time}s...[/yellow]")
+                log_warn(f"Rate limited on {category}. Waiting {wait_time}s...")
                 time.sleep(wait_time)
                 continue
             response.raise_for_status()
@@ -73,12 +80,10 @@ def fetch_rss_feed(category: str, max_retries: int = 3) -> list:
         except requests.exceptions.RequestException as e:
             if attempt < max_retries - 1:
                 wait_time = (2 ** attempt) * 2
-                logger.warning(f"Error fetching {category}: {e}. Retrying in {wait_time}s...")
-                console.print(f"[yellow]Error fetching {category}: {e}. Retrying in {wait_time}s...[/yellow]")
+                log_warn(f"Error fetching {category}: {e}. Retrying in {wait_time}s...")
                 time.sleep(wait_time)
             else:
-                logger.error(f"Failed to fetch {category} after {max_retries} attempts")
-                console.print(f"[red]Failed to fetch {category} after {max_retries} attempts[/red]")
+                log_error(f"Failed to fetch {category} after {max_retries} attempts")
                 return []
     
     return []
@@ -249,18 +254,16 @@ def extract_text_from_pdf(pdf_path: Path) -> str | None:
         return "\n\n".join(text_parts)
     except (fitz.FileDataError, fitz.EmptyFileError, fitz.FileNotFoundError) as e:
         # Expected PDF errors - log and continue
-        logger.warning(f"Invalid PDF {pdf_path}: {e}")
-        console.print(f"[yellow]Invalid PDF {pdf_path}: {e}[/yellow]")
+        log_warn(f"Invalid PDF {pdf_path}: {e}")
         return None
     except MemoryError:
         # Large PDF exhausted memory - log and continue (don't crash batch)
-        logger.error(f"Out of memory extracting {pdf_path}")
-        console.print(f"[red]Out of memory extracting {pdf_path}[/red]")
+        log_error(f"Out of memory extracting {pdf_path}")
         return None
     except Exception as e:
         # Unexpected error - log loudly but continue batch processing
         logger.error(f"Unexpected error extracting {pdf_path}: {type(e).__name__}: {e}", exc_info=True)
-        console.print(f"[red]Unexpected error extracting {pdf_path}: {type(e).__name__}: {e}[/red]")
+        log_error(f"Unexpected error extracting {pdf_path}: {type(e).__name__}: {e}")
         return None
 
 
@@ -300,8 +303,7 @@ def download_and_extract_text(paper: dict[str, Any]) -> bool:
             return False
             
     except Exception as e:
-        logger.warning(f"Failed to download {paper['paper_id']}: {e}")
-        console.print(f"[yellow]Failed to download {paper['paper_id']}: {e}[/yellow]")
+        log_warn(f"Failed to download {paper['paper_id']}: {e}")
         pdf_path.unlink(missing_ok=True)
         return False
 
