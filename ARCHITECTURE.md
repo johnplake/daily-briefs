@@ -11,10 +11,11 @@ SQLite-centric architecture for arXiv paper curation. The database is the single
 ```
 data/
 ├── papers.db                              # SQLite - single source of truth
-├── arxiv/                                 # Text files organized by source
-│   └── {announced_date}/                  # e.g., 2026-02-21
-│       └── {paper_id}/                    # e.g., 2502.12345
-│           └── paper.txt                  # extracted text (~75KB each)
+├── text/                                  # Text files organized by source (paths.text)
+│   └── {paper_source}/                    # e.g., arxiv
+│       └── {announced_date}/              # e.g., 2026-02-21
+│           └── {paper_id}/                # e.g., 2502.12345
+│               └── paper.txt              # extracted text (~75KB each)
 └── embeddings/
     └── faiss.index                        # FAISS vectors (positions match embedding_idx)
 ```
@@ -29,7 +30,7 @@ data/
 
 **Reconstructing path from DB:**
 ```python
-text_path = f"data/{row.paper_source}/{row.announced_date}/{row.paper_id}/paper.txt"
+text_path = f"data/text/{row.paper_source}/{row.announced_date}/{row.paper_id}/paper.txt"
 ```
 
 Note: `paper_source` is the *original* source where we discovered the paper. If a paper later gets published at a conference, `published_venue` tracks that, but the path remains based on the original source.
@@ -214,6 +215,7 @@ When a paper originally discovered on arXiv gets published at a conference (e.g.
   - If `--extract-text`: download PDF, extract text, save to path, set `text_extracted=1`
 - Text always re-extracted on version update (overwrite file)
 - Embedding NOT cleared on version update
+- Date parsing from RSS is normalized to YYYY-MM-DD (invalid dates → None)
 
 ### `enrich.py`
 - Queries DB for papers needing citation data
@@ -258,12 +260,12 @@ When a paper originally discovered on arXiv gets published at a conference (e.g.
 - Generates markdown report with GitHub issue links
 - Queries DB for full metadata as needed
 
-### `migrate.py` (one-time)
-- Reads existing `data/arxiv/raw/YYYY-MM-DD/<id>/metadata.json` files
-- Inserts into new DB schema
-- Moves `paper.txt` to new location
-- Imports existing `paper_ids.json` → sets `embedding_idx` values
-- Cleans up old structure after verification
+### `migrate_categories_to_json.py` (one-time)
+- Converts categories from space-separated strings to JSON arrays
+- Idempotent (skips already-JSON rows)
+
+### `rebuild_fts.py`
+- Emergency rebuild of FTS index if it ever gets out of sync
 
 ---
 
@@ -332,7 +334,7 @@ Migration from JSON-based structure to SQLite-centric was completed:
 | `metadata.json` per paper | SQLite `papers` table |
 | `citations.json` per paper | `citations_s2`, `citations_oa` columns |
 | `paper_ids.json` for FAISS mapping | `embedding_idx` column |
-| `data/arxiv/raw/{date}/{id}/` | `data/arxiv/{date}/{id}/paper.txt` |
+| `data/arxiv/raw/{date}/{id}/` | `data/text/{source}/{date}/{id}/paper.txt` |
 | Query = scan JSON files | Query = SQL |
 | No full-text search | FTS5 on title + abstract |
 

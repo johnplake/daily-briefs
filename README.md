@@ -20,7 +20,7 @@ This system:
 ```
 data/
 ├── papers.db                    # SQLite database (all metadata)
-├── arxiv/{date}/{paper_id}/     # Text files only
+├── text/{source}/{date}/{id}/   # Extracted text files (configured via paths.text)
 │   └── paper.txt                # Extracted full text (~75KB)
 └── embeddings/
     └── faiss.index              # SPECTER vectors (768-dim)
@@ -51,7 +51,7 @@ Plus feedback candidates:
 
 ### Daily Pipeline (cron at 8am Mon-Fri)
 ```bash
-.venv/bin/python scripts/ingest.py --extract-text --no-source
+.venv/bin/python scripts/ingest.py --extract-text
 .venv/bin/python scripts/filter.py --date $(date +%Y-%m-%d)
 .venv/bin/python scripts/report.py --date $(date +%Y-%m-%d)
 ```
@@ -70,6 +70,7 @@ Plus feedback candidates:
 ```bash
 .venv/bin/python scripts/enrich.py --date 2026-02-21
 .venv/bin/python scripts/enrich.py --update  # Re-enrich all
+.venv/bin/python scripts/enrich.py --dry-run # Fetch without DB writes
 ```
 
 ### Semantic Search
@@ -98,8 +99,11 @@ Plus feedback candidates:
 | `filter.py` | Apply filtering streams for a date |
 | `report.py` | Generate markdown report |
 | `init_db.py` | Initialize SQLite schema |
-| `migrate.py` | One-time migration from JSON to SQLite |
+| `migrate_categories_to_json.py` | One-time migration: categories string → JSON |
+| `rebuild_fts.py` | Emergency rebuild of FTS index |
 | `verify_embeddings.py` | Check embedding_idx ↔ FAISS consistency |
+| `check.py` | Full sanity checks (DB, FAISS, UMAP, FTS) |
+| `utils.py` | Shared helpers (safe_json_load, etc.) |
 
 ## Cron Schedule
 
@@ -145,7 +149,7 @@ uv pip install -r requirements.txt
 
 Key columns in `papers` table:
 - `paper_source`, `paper_id`, `announced_date` — identity
-- `title`, `abstract`, `authors`, `categories` — metadata
+- `title`, `abstract`, `authors`, `categories` — metadata (authors/categories stored as JSON arrays)
 - `citations_s2`, `citations_oa` — citation counts
 - `embedding_idx` — position in FAISS index
 - `umap_x`, `umap_y` — 2D coordinates for visualization
