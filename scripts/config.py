@@ -89,6 +89,9 @@ def load_config() -> dict:
     
     with open(config_path) as f:
         config = yaml.safe_load(f)
+
+    if not isinstance(config, dict):
+        raise ConfigError(f"Config is empty or invalid YAML: {config_path}")
     
     # Validate required sections
     validate_config(config, config_path)

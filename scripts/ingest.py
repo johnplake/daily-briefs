@@ -387,9 +387,10 @@ def upsert_paper(conn: sqlite3.Connection, paper: dict[str, Any], text_extracted
             paper["authors"],
             paper["categories"],
             paper["version"],
-            # We intentionally set updated_date to announced_date so the text file
-            # stays under its canonical <announced_date> folder even when new versions appear.
-            # This keeps paths stable and avoids complicated folder moves.
+            # We intentionally set updated_date to announced_date ("seen" date)
+            # so the text file stays under its canonical <announced_date> folder
+            # even when new versions appear. This keeps paths stable and avoids
+            # complicated folder moves.
             paper["announced_date"],
             paper["doi"],
             1 if text_extracted else existing_text,
