@@ -23,6 +23,7 @@ from datetime import datetime
 
 # Import config (app.py is now in scripts/ alongside config.py)
 from config import CONFIG, DB_PATH, get_db_connection, PROJECT_ROOT
+from utils import safe_json_load
 
 # Dashboard settings
 MAX_SEARCH_RESULTS = CONFIG.get("dashboard", {}).get("max_search_results", 500)
@@ -54,8 +55,9 @@ def load_papers(include_hidden: bool = False) -> pd.DataFrame:
         conn.close()
     
     # Parse authors JSON
-    import json
-    df['authors'] = df['authors'].apply(lambda x: ', '.join(json.loads(x)[:3]) if x else 'Unknown')
+    df['authors'] = df['authors'].apply(
+        lambda x: ', '.join(safe_json_load(x, default=[], warn_fn=print)[:3]) if x else 'Unknown'
+    )
     
     return df
 
@@ -95,8 +97,9 @@ def search_papers(query_text: str, include_hidden: bool = False) -> pd.DataFrame
         conn.close()
     
     # Parse authors JSON
-    import json
-    df['authors'] = df['authors'].apply(lambda x: ', '.join(json.loads(x)[:3]) if x else 'Unknown')
+    df['authors'] = df['authors'].apply(
+        lambda x: ', '.join(safe_json_load(x, default=[], warn_fn=print)[:3]) if x else 'Unknown'
+    )
     
     return df
 
@@ -109,7 +112,7 @@ df = load_papers()
 # Get unique categories for filter
 all_categories = set()
 for cats in df['categories'].dropna():
-    all_categories.update(json.loads(cats))
+    all_categories.update(safe_json_load(cats, default=[], warn_fn=print))
 category_options = [{'label': cat, 'value': cat} for cat in sorted(all_categories)]
 
 app.layout = html.Div([
@@ -245,7 +248,7 @@ def update_scatter(search_query, category, show_hidden, start_date, end_date, _r
     # Apply category filter (categories is JSON array)
     if category != 'all' and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df['categories'].apply(
-            lambda x: category in json.loads(x) if x else False
+            lambda x: category in safe_json_load(x, default=[], warn_fn=print) if x else False
         )]
     
     # Apply date filter
@@ -420,7 +423,7 @@ def display_paper_details(clickData, filtered_data_json):
         html.P([
             html.Strong("All Categories: "),
             html.Span(
-                ', '.join(json.loads(paper['categories'])) if paper['categories'] else 'None',
+                ', '.join(safe_json_load(paper['categories'], default=[], warn_fn=print)) if paper['categories'] else 'None',
                 style={'fontSize': '14px'}
             )
         ]),

@@ -27,6 +27,7 @@ from rich.console import Console
 from rich.table import Table
 
 from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, FILTERING, get_db_connection, validate_date
+from utils import safe_json_load
 
 console = Console()
 
@@ -57,15 +58,20 @@ def get_papers_for_date(conn: sqlite3.Connection, date: str) -> list[dict]:
         paper = dict(row)
         # Parse JSON fields
         if paper["authors"]:
-            try:
-                paper["authors"] = json.loads(paper["authors"])
-            except json.JSONDecodeError:
-                paper["authors"] = []
+            paper["authors"] = safe_json_load(
+                paper["authors"],
+                default=[],
+                warn_fn=lambda m: console.print(f"[yellow]{m}[/yellow]")
+            )
         else:
             paper["authors"] = []
         
         # Categories is JSON array
-        paper["categories_list"] = json.loads(paper["categories"]) if paper["categories"] else []
+        paper["categories_list"] = safe_json_load(
+            paper["categories"],
+            default=[],
+            warn_fn=lambda m: console.print(f"[yellow]{m}[/yellow]")
+        )
         
         papers.append(paper)
     

@@ -29,6 +29,7 @@ from config import (
     get_db_connection, validate_date
 )
 from logging_config import setup_logging
+from utils import safe_json_load
 
 console = Console()
 logger = setup_logging("ingest")
@@ -205,8 +206,8 @@ def fetch_all_papers(categories: list, announced_date: str) -> list:
                 if paper_id in all_papers:
                     # Merge categories if we've seen this paper before
                     existing = all_papers[paper_id]
-                    existing_cats = set(json.loads(existing["categories"]))
-                    new_cats = set(json.loads(paper["categories"]))
+                    existing_cats = set(safe_json_load(existing["categories"], default=[], warn_fn=logger.warning))
+                    new_cats = set(safe_json_load(paper["categories"], default=[], warn_fn=logger.warning))
                     existing["categories"] = json.dumps(list(existing_cats | new_cats))
                     # Keep higher version
                     if paper["version"] > existing["version"]:
