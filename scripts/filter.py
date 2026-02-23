@@ -33,6 +33,8 @@ from utils import safe_json_load
 console = Console()
 logger = setup_logging("filter")
 
+UNKNOWN_CATEGORIES: set[str] = set()
+
 # Load filtering weights from config
 CITATION_WEIGHT_S2 = FILTERING["citation_weight_s2"]
 CITATION_WEIGHT_OA = FILTERING["citation_weight_oa"]
@@ -90,6 +92,10 @@ def get_tier(category: str, config: dict) -> int:
         return 2
     elif category in categories.get("tier3", []):
         return 3
+
+    if category and category not in UNKNOWN_CATEGORIES:
+        UNKNOWN_CATEGORIES.add(category)
+        logger.warning(f"Unknown category not found in config tiers: {category}")
     return 0
 
 
