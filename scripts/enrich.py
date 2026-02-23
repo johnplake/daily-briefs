@@ -183,6 +183,7 @@ def main():
     parser.add_argument("--update", action="store_true", help="Update all papers (even if already enriched)")
     parser.add_argument("--no-s2", action="store_true", help="Skip Semantic Scholar")
     parser.add_argument("--no-openalex", action="store_true", help="Skip OpenAlex")
+    parser.add_argument("--dry-run", action="store_true", help="Fetch citations without writing to DB")
     args = parser.parse_args()
     
     console.print("[bold green]Citation Enrichment[/bold green]")
@@ -232,7 +233,10 @@ def main():
                     time.sleep(OPENALEX_DELAY)
                 
                 if s2_count is not None or oa_count is not None:
-                    update_citations(conn, paper_db_id, s2_count, oa_count)
+                    if args.dry_run:
+                        logger.info(f"[dry-run] Would update {paper_id}: s2={s2_count}, oa={oa_count}")
+                    else:
+                        update_citations(conn, paper_db_id, s2_count, oa_count)
                     enriched_count += 1
                 
                 # Commit periodically
@@ -241,9 +245,12 @@ def main():
                 
                 progress.advance(task)
         
-        conn.commit()
+        if not args.dry_run:
+            conn.commit()
         
         console.print(f"\n[bold green]✓ Enriched {enriched_count}/{len(papers)} papers with citation data[/bold green]")
+        if args.dry_run:
+            console.print("[yellow]Dry run - no DB writes performed.[/yellow]")
     finally:
         conn.close()
 
