@@ -109,6 +109,15 @@ app = dash.Dash(__name__, suppress_callback_exceptions=True)
 # Load initial data
 df = load_papers()
 
+# Handle empty dataset for date picker defaults
+if df.empty:
+    default_start_date = default_end_date = datetime.today().strftime("%Y-%m-%d")
+    date_picker_disabled = True
+else:
+    default_start_date = df['announced_date'].min()
+    default_end_date = df['announced_date'].max()
+    date_picker_disabled = False
+
 # Get unique categories for filter
 all_categories = set()
 for cats in df['categories'].dropna():
@@ -176,9 +185,10 @@ app.layout = html.Div([
         html.Div([
             dcc.DatePickerRange(
                 id='date-filter',
-                start_date=df['announced_date'].min(),
-                end_date=df['announced_date'].max(),
-                style={'fontSize': '12px'}
+                start_date=default_start_date,
+                end_date=default_end_date,
+                style={'fontSize': '12px'},
+                disabled=date_picker_disabled
             )
         ], style={'marginBottom': '10px'})
     ], style={
