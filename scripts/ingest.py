@@ -211,11 +211,11 @@ def fetch_all_papers(categories: list, announced_date: str) -> list:
             
             for entry in entries:
                 paper = parse_entry(entry, category, announced_date)
-                paper_id = paper["paper_id"]
+                paper_key = (paper["paper_source"], paper["paper_id"])
                 
-                if paper_id in all_papers:
+                if paper_key in all_papers:
                     # Merge categories if we've seen this paper before
-                    existing = all_papers[paper_id]
+                    existing = all_papers[paper_key]
                     existing_cats = set(safe_json_load(existing["categories"], default=[], warn_fn=logger.warning))
                     new_cats = set(safe_json_load(paper["categories"], default=[], warn_fn=logger.warning))
                     existing["categories"] = json.dumps(list(existing_cats | new_cats))
@@ -223,7 +223,7 @@ def fetch_all_papers(categories: list, announced_date: str) -> list:
                     if paper["version"] > existing["version"]:
                         existing["version"] = paper["version"]
                 else:
-                    all_papers[paper_id] = paper
+                    all_papers[paper_key] = paper
             
             console.print(f"  {category}: {len(entries)} papers (total unique: {len(all_papers)})")
             
