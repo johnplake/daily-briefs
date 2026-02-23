@@ -11,7 +11,7 @@
 paths:
   root: /home/node/.openclaw/workspace/Projects/daily-briefs
   db: data/papers.db           # SQLite database (single source of truth)
-  text: data/text/             # Extracted paper text (~75KB each)
+  text: data/                  # Extracted paper text (~75KB each)
   embeddings: data/embeddings/ # FAISS index + embedding vectors
   filtered: data/filtered/     # Daily filtered results (JSON)
   reports: reports/            # Generated markdown reports

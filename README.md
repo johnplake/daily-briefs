@@ -20,7 +20,7 @@ This system:
 ```
 data/
 ├── papers.db                    # SQLite database (all metadata)
-├── text/{source}/{date}/{id}/   # Extracted text files (configured via paths.text)
+├── {source}/{date}/{id}/        # Extracted text files (e.g., arxiv/2026-02-23/2602.17053/)
 │   └── paper.txt                # Extracted full text (~75KB)
 └── embeddings/
     └── faiss.index              # SPECTER vectors (768-dim)

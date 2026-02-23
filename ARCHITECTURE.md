@@ -11,11 +11,10 @@ SQLite-centric architecture for arXiv paper curation. The database is the single
 ```
 data/
 ├── papers.db                              # SQLite - single source of truth
-├── text/                                  # Text files organized by source (paths.text)
-│   └── {paper_source}/                    # e.g., arxiv
-│       └── {announced_date}/              # e.g., 2026-02-21
-│           └── {paper_id}/                # e.g., 2502.12345
-│               └── paper.txt              # extracted text (~75KB each)
+├── {paper_source}/                        # Text files organized by source (paths.text = data/)
+│   └── {announced_date}/                  # e.g., arxiv/2026-02-21/
+│       └── {paper_id}/                    # e.g., 2502.12345
+│           └── paper.txt                  # extracted text (~75KB each)
 └── embeddings/
     └── faiss.index                        # FAISS vectors (positions match embedding_idx)
 ```
@@ -30,7 +29,7 @@ data/
 
 **Reconstructing path from DB:**
 ```python
-text_path = f"data/text/{row.paper_source}/{row.announced_date}/{row.paper_id}/paper.txt"
+text_path = f"data/{row.paper_source}/{row.announced_date}/{row.paper_id}/paper.txt"
 ```
 
 Note: `paper_source` is the *original* source where we discovered the paper. If a paper later gets published at a conference, `published_venue` tracks that, but the path remains based on the original source.
@@ -337,7 +336,7 @@ Migration from JSON-based structure to SQLite-centric was completed:
 | `metadata.json` per paper | SQLite `papers` table |
 | `citations.json` per paper | `citations_s2`, `citations_oa` columns |
 | `paper_ids.json` for FAISS mapping | `embedding_idx` column |
-| `data/arxiv/raw/{date}/{id}/` | `data/text/{source}/{date}/{id}/paper.txt` |
+| `data/arxiv/raw/{date}/{id}/` | `data/{source}/{date}/{id}/paper.txt` |
 | Query = scan JSON files | Query = SQL |
 | No full-text search | FTS5 on title + abstract |
 
@@ -498,7 +497,7 @@ Scripts support per-agent configuration via the `DAILY_BRIEFS_CONFIG` environmen
 paths:
   root: /path/to/data/directory
   db: data/papers.db          # relative to root
-  text: data/text/
+  text: data/
   embeddings: data/embeddings/
   filtered: data/filtered/
   reports: reports/

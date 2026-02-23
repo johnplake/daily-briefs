@@ -110,7 +110,7 @@ def load_config() -> dict:
     config["_resolved"] = {
         "root": root,
         "db": root / paths.get("db", "data/papers.db"),
-        "text": root / paths.get("text", "data/text/"),
+        "text": root / paths.get("text", "data/"),
         "embeddings": root / paths.get("embeddings", "data/embeddings/"),
         "filtered": root / paths.get("filtered", "data/filtered/"),
         "reports": root / paths.get("reports", "reports/"),
