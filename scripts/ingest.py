@@ -281,7 +281,7 @@ def download_and_extract_text(paper: dict[str, Any]) -> bool:
     try:
         response = requests.get(
             paper["pdf_url"],
-            timeout=config.get("storage", {}).get("pdf_timeout_seconds", 60),
+            timeout=CONFIG.get("storage", {}).get("pdf_timeout_seconds", 60),
             stream=True
         )
         response.raise_for_status()
