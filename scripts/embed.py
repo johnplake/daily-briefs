@@ -12,6 +12,7 @@ Optionally runs UMAP projection to 2D after embedding (--umap flag).
 """
 
 import argparse
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -32,6 +33,7 @@ console = Console()
 
 # Use EMBEDDINGS_DIR from config
 INDEX_DIR = EMBEDDINGS_DIR
+MARKER_PATH = INDEX_DIR / "embed_in_progress.json"
 
 # Embedding model for scientific papers
 MODEL_NAME = EMBEDDINGS["model_name"]
@@ -148,46 +150,111 @@ def main():
     parser.add_argument("--umap-neighbors", type=int, default=15, help="UMAP n_neighbors (default: 15)")
     parser.add_argument("--umap-min-dist", type=float, default=0.1, help="UMAP min_dist (default: 0.1)")
     args = parser.parse_args()
-    
+
     console.print("[bold green]Paper Embedding with SPECTER[/bold green]")
-    
+
+    # Guardrail: if a previous embed crashed, force rebuild
+    if MARKER_PATH.exists() and not args.rebuild:
+        raise RuntimeError(
+            f"Found stale marker {MARKER_PATH}. Previous embed may have crashed. "
+            "Run embed.py --rebuild to recover."
+        )
+    if MARKER_PATH.exists() and args.rebuild:
+        MARKER_PATH.unlink(missing_ok=True)
+
     conn = get_db_connection()
-    
-    # Handle rebuild
-    if args.rebuild:
-        console.print("[yellow]Rebuilding index from scratch[/yellow]")
-        # Clear all embedding_idx and UMAP coordinates
-        conn.execute("UPDATE papers SET embedding_idx = NULL, umap_x = NULL, umap_y = NULL")
-        conn.commit()
-        # Delete existing index
-        index_path = INDEX_DIR / "faiss.index"
-        if index_path.exists():
-            index_path.unlink()
-    
-    # Validate date if provided
-    date_filter = validate_date(args.date) if args.date else None
-    
-    # Load or create index
-    index = load_or_create_index()
-    
-    # Guardrail: refuse to append if DB/index are out of sync (unless rebuild)
-    if not args.rebuild:
-        validate_index_alignment(conn, index)
-    
-    # Starting position for new embeddings
-    start_idx = index.ntotal
-    
-    # Get papers to embed
-    papers = get_papers_to_embed(conn, date_filter, args.limit)
-    
-    if not papers:
-        console.print("[yellow]No papers need embedding.[/yellow]")
-        
-        # Still run UMAP if requested (useful for recomputing projections)
+    try:
+        # Handle rebuild
+        if args.rebuild:
+            console.print("[yellow]Rebuilding index from scratch[/yellow]")
+            conn.execute("UPDATE papers SET embedding_idx = NULL, umap_x = NULL, umap_y = NULL")
+            conn.commit()
+            index_path = INDEX_DIR / "faiss.index"
+            if index_path.exists():
+                index_path.unlink()
+
+        date_filter = validate_date(args.date) if args.date else None
+
+        index = load_or_create_index()
+        if not args.rebuild:
+            validate_index_alignment(conn, index)
+
+        start_idx = index.ntotal
+        papers = get_papers_to_embed(conn, date_filter, args.limit)
+
+        if not papers:
+            console.print("[yellow]No papers need embedding.[/yellow]")
+            if args.umap:
+                console.print("\n[bold green]Running UMAP Projection[/bold green]")
+                embeddings, paper_ids = load_embeddings_and_ids(conn)
+                if len(embeddings) > 0:
+                    coords = run_umap(
+                        embeddings,
+                        n_neighbors=args.umap_neighbors,
+                        min_dist=args.umap_min_dist
+                    )
+                    update_coordinates(conn, paper_ids, coords)
+                    console.print(f"[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
+                else:
+                    console.print("[yellow]No embeddings to project.[/yellow]")
+            return
+
+        console.print(f"Papers to embed: {len(papers)}")
+        console.print(f"Starting index position: {start_idx}")
+
+        console.print(f"[cyan]Loading model: {MODEL_NAME}[/cyan]")
+        model = SentenceTransformer(MODEL_NAME)
+
+        paper_data = [dict(row) for row in papers]
+        texts = [get_paper_text(p) for p in paper_data]
+
+        console.print(f"[cyan]Generating embeddings (batch size: {args.batch_size})...[/cyan]")
+
+        all_embeddings = []
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Embedding...", total=len(texts))
+            for i in range(0, len(texts), args.batch_size):
+                batch = texts[i:i + args.batch_size]
+                batch_embeddings = model.encode(batch, show_progress_bar=False)
+                all_embeddings.append(batch_embeddings)
+                progress.update(task, advance=len(batch),
+                               description=f"Embedding {min(i + args.batch_size, len(texts))}/{len(texts)}...")
+
+        new_embeddings = np.vstack(all_embeddings).astype('float32')
+        faiss.normalize_L2(new_embeddings)
+
+        expected_total = index.ntotal + len(new_embeddings)
+        MARKER_PATH.parent.mkdir(parents=True, exist_ok=True)
+        MARKER_PATH.write_text(json.dumps({"expected_total": expected_total}))
+
+        try:
+            index.add(new_embeddings)
+
+            console.print("[cyan]Updating database...[/cyan]")
+            for i, paper in enumerate(paper_data):
+                embedding_idx = start_idx + i
+                conn.execute(
+                    "UPDATE papers SET embedding_idx = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (embedding_idx, paper["id"])
+                )
+
+            conn.commit()
+            save_index(index)
+        finally:
+            if MARKER_PATH.exists():
+                MARKER_PATH.unlink(missing_ok=True)
+
+        console.print(f"\n[bold green]✓ Embedded {len(papers)} papers[/bold green]")
+        console.print(f"[bold green]✓ Index now contains {index.ntotal} vectors[/bold green]")
+        console.print(f"[bold green]✓ Saved to {INDEX_DIR}[/bold green]")
+
         if args.umap:
             console.print("\n[bold green]Running UMAP Projection[/bold green]")
             embeddings, paper_ids = load_embeddings_and_ids(conn)
-            
             if len(embeddings) > 0:
                 coords = run_umap(
                     embeddings,
@@ -198,100 +265,7 @@ def main():
                 console.print(f"[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
             else:
                 console.print("[yellow]No embeddings to project.[/yellow]")
-        
-        conn.close()
-        return
-    
-    console.print(f"Papers to embed: {len(papers)}")
-    console.print(f"Starting index position: {start_idx}")
-    
-    # Load model
-    console.print(f"[cyan]Loading model: {MODEL_NAME}[/cyan]")
-    model = SentenceTransformer(MODEL_NAME)
-    
-    # Prepare texts
-    paper_data = [dict(row) for row in papers]
-    texts = [get_paper_text(p) for p in paper_data]
-    
-    # Generate embeddings in batches
-    console.print(f"[cyan]Generating embeddings (batch size: {args.batch_size})...[/cyan]")
-    
-    all_embeddings = []
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Embedding...", total=len(texts))
-        
-        for i in range(0, len(texts), args.batch_size):
-            batch = texts[i:i + args.batch_size]
-            batch_embeddings = model.encode(batch, show_progress_bar=False)
-            all_embeddings.append(batch_embeddings)
-            progress.update(task, advance=len(batch), 
-                          description=f"Embedding {min(i + args.batch_size, len(texts))}/{len(texts)}...")
-    
-    # Combine embeddings
-    new_embeddings = np.vstack(all_embeddings).astype('float32')
-    
-    # Normalize for cosine similarity
-    faiss.normalize_L2(new_embeddings)
-    
-    # Add new embeddings
-    index.add(new_embeddings)
-    
-    # Update database with embedding indices
-    console.print("[cyan]Updating database...[/cyan]")
-    for i, paper in enumerate(paper_data):
-        embedding_idx = start_idx + i
-        conn.execute(
-            "UPDATE papers SET embedding_idx = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (embedding_idx, paper["id"])
-        )
-    
-    conn.commit()
-    
-    # Save index
-    save_index(index)
-    
-    console.print(f"\n[bold green]✓ Embedded {len(papers)} papers[/bold green]")
-    console.print(f"[bold green]✓ Index now contains {index.ntotal} vectors[/bold green]")
-    console.print(f"[bold green]✓ Saved to {INDEX_DIR}[/bold green]")
-    
-    # Close the original connection before UMAP (clean handoff)
-    conn.close()
-    
-    # Run UMAP projection if requested
-    if args.umap:
-        console.print("\n[bold green]Running UMAP Projection[/bold green]")
-        
-        # Reconnect for UMAP
-        conn = get_db_connection()
-        
-        # Load all embeddings (including newly added ones)
-        embeddings, paper_ids = load_embeddings_and_ids(conn)
-        
-        if len(embeddings) > 0:
-            # Run UMAP
-            coords = run_umap(
-                embeddings,
-                n_neighbors=args.umap_neighbors,
-                min_dist=args.umap_min_dist
-            )
-            
-            # Update database
-            update_coordinates(conn, paper_ids, coords)
-            
-            console.print(f"[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
-            
-            # Print coordinate ranges
-            x_min, x_max = coords[:, 0].min(), coords[:, 0].max()
-            y_min, y_max = coords[:, 1].min(), coords[:, 1].max()
-            console.print(f"  X range: [{x_min:.2f}, {x_max:.2f}]")
-            console.print(f"  Y range: [{y_min:.2f}, {y_max:.2f}]")
-        else:
-            console.print("[yellow]No embeddings to project.[/yellow]")
-        
+    finally:
         conn.close()
 
 

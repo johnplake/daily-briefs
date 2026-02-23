@@ -191,60 +191,61 @@ def main():
     date_filter = validate_date(args.date) if args.date else None
     
     conn = get_db_connection()
-    
-    # Get papers
-    papers = get_papers_to_enrich(conn, date_filter, args.update, args.limit)
-    
-    console.print(f"Papers to enrich: {len(papers)}")
-    
-    if not papers:
-        console.print("[yellow]No papers need enrichment.[/yellow]")
-        return
-    
-    use_s2 = not args.no_s2
-    use_openalex = not args.no_openalex
-    
-    # Process papers
-    enriched_count = 0
-    
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Enriching...", total=len(papers))
+    try:
+        # Get papers
+        papers = get_papers_to_enrich(conn, date_filter, args.update, args.limit)
         
-        for i, row in enumerate(papers):
-            paper_db_id = row["id"]
-            paper_id = row["paper_id"]
+        console.print(f"Papers to enrich: {len(papers)}")
+        
+        if not papers:
+            console.print("[yellow]No papers need enrichment.[/yellow]")
+            return
+        
+        use_s2 = not args.no_s2
+        use_openalex = not args.no_openalex
+        
+        # Process papers
+        enriched_count = 0
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Enriching...", total=len(papers))
             
-            progress.update(task, description=f"Enriching {paper_id} ({i+1}/{len(papers)})")
-            
-            s2_count = None
-            oa_count = None
-            
-            if use_s2:
-                s2_count = fetch_s2_citations(paper_id)
-                time.sleep(S2_DELAY)
-            
-            if use_openalex:
-                oa_count = fetch_openalex_citations(paper_id)
-                time.sleep(OPENALEX_DELAY)
-            
-            if s2_count is not None or oa_count is not None:
-                update_citations(conn, paper_db_id, s2_count, oa_count)
-                enriched_count += 1
-            
-            # Commit periodically
-            if (i + 1) % 100 == 0:
-                conn.commit()
-            
-            progress.advance(task)
-    
-    conn.commit()
-    conn.close()
-    
-    console.print(f"\n[bold green]✓ Enriched {enriched_count}/{len(papers)} papers with citation data[/bold green]")
+            for i, row in enumerate(papers):
+                paper_db_id = row["id"]
+                paper_id = row["paper_id"]
+                
+                progress.update(task, description=f"Enriching {paper_id} ({i+1}/{len(papers)})")
+                
+                s2_count = None
+                oa_count = None
+                
+                if use_s2:
+                    s2_count = fetch_s2_citations(paper_id)
+                    time.sleep(S2_DELAY)
+                
+                if use_openalex:
+                    oa_count = fetch_openalex_citations(paper_id)
+                    time.sleep(OPENALEX_DELAY)
+                
+                if s2_count is not None or oa_count is not None:
+                    update_citations(conn, paper_db_id, s2_count, oa_count)
+                    enriched_count += 1
+                
+                # Commit periodically
+                if (i + 1) % 100 == 0:
+                    conn.commit()
+                
+                progress.advance(task)
+        
+        conn.commit()
+        
+        console.print(f"\n[bold green]✓ Enriched {enriched_count}/{len(papers)} papers with citation data[/bold green]")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

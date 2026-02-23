@@ -145,18 +145,21 @@ def search_abstract(query: str, conn: sqlite3.Connection, k: int = None, include
     if k is None:
         k = DEFAULT_RESULTS
     where_hidden = "" if include_hidden else "AND p.hidden = 0"
-    cursor = conn.execute(
-        f"""SELECT p.*, bm25(papers_fts) as score 
-           FROM papers p
-           JOIN papers_fts fts ON p.id = fts.rowid
-           WHERE papers_fts MATCH ?
-           {where_hidden}
-           ORDER BY score
-           LIMIT ?""",
-        (query, k)
-    )
-    
-    return [dict(row) for row in cursor.fetchall()]
+    try:
+        cursor = conn.execute(
+            f"""SELECT p.*, bm25(papers_fts) as score 
+               FROM papers p
+               JOIN papers_fts fts ON p.id = fts.rowid
+               WHERE papers_fts MATCH ?
+               {where_hidden}
+               ORDER BY score
+               LIMIT ?""",
+            (query, k)
+        )
+        return [dict(row) for row in cursor.fetchall()]
+    except sqlite3.OperationalError as e:
+        console.print(f"[yellow]FTS query error: {e}[/yellow]")
+        return []
 
 
 def display_results(results: list, show_score: bool = True):
@@ -198,49 +201,48 @@ def main():
         return
     
     conn = get_db_connection()
-    
-    # Handle abstract search (doesn't need embeddings)
-    if args.abstract:
-        results = search_abstract(args.abstract, conn, args.k)
+    try:
+        # Handle abstract search (doesn't need embeddings)
+        if args.abstract:
+            results = search_abstract(args.abstract, conn, args.k)
+            if not results:
+                console.print("[yellow]No results found[/yellow]")
+                return
+            
+            if args.json:
+                print(json.dumps(results, indent=2, default=str))
+            else:
+                display_results(results, show_score=True)
+            return
+        
+        # Load FAISS index for semantic search
+        index = load_index()
+        
+        if index is None:
+            console.print("[red]No embedding index found. Run embed.py first.[/red]")
+            return
+        
+        console.print(f"[cyan]Index contains {index.ntotal} vectors[/cyan]")
+        
+        # Semantic search
+        if args.query:
+            console.print(f"[cyan]Loading model for query encoding...[/cyan]")
+            model = SentenceTransformer(MODEL_NAME)
+            results = search_by_query(args.query, model, index, conn, args.k)
+        else:
+            results = search_similar(args.similar, index, conn, args.k)
+        
         if not results:
             console.print("[yellow]No results found[/yellow]")
             return
         
+        # Output
         if args.json:
             print(json.dumps(results, indent=2, default=str))
         else:
-            display_results(results, show_score=True)
+            display_results(results)
+    finally:
         conn.close()
-        return
-    
-    # Load FAISS index for semantic search
-    index = load_index()
-    
-    if index is None:
-        console.print("[red]No embedding index found. Run embed.py first.[/red]")
-        return
-    
-    console.print(f"[cyan]Index contains {index.ntotal} vectors[/cyan]")
-    
-    # Semantic search
-    if args.query:
-        console.print(f"[cyan]Loading model for query encoding...[/cyan]")
-        model = SentenceTransformer(MODEL_NAME)
-        results = search_by_query(args.query, model, index, conn, args.k)
-    else:
-        results = search_similar(args.similar, index, conn, args.k)
-    
-    conn.close()
-    
-    if not results:
-        console.print("[yellow]No results found[/yellow]")
-        return
-    
-    # Output
-    if args.json:
-        print(json.dumps(results, indent=2, default=str))
-    else:
-        display_results(results)
 
 
 if __name__ == "__main__":

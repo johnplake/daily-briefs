@@ -290,29 +290,28 @@ def main():
     # Use shared config (set DAILY_BRIEFS_CONFIG env var to override)
     config = CONFIG
     conn = get_db_connection()
-    
-    papers = get_papers_for_date(conn, target_date)
-    console.print(f"Papers to filter: {len(papers)}")
-    
-    if not papers:
-        console.print("[yellow]No papers found for this date.[/yellow]")
-        conn.close()
-        return
-    
-    results = filter_papers(papers, config)
-    print_summary(results)
-    
-    # Save results
-    if args.dry_run:
-        console.print("[yellow]Dry run - not saving filtered results.[/yellow]")
-    else:
-        FILTERED_DIR.mkdir(parents=True, exist_ok=True)
-        output_path = Path(args.output) if args.output else FILTERED_DIR / f"{target_date}.json"
+    try:
+        papers = get_papers_for_date(conn, target_date)
+        console.print(f"Papers to filter: {len(papers)}")
         
-        save_filtered_results(results, output_path)
-        console.print(f"\n[bold green]✓ Saved filtered results to {output_path}[/bold green]")
-    
-    conn.close()
+        if not papers:
+            console.print("[yellow]No papers found for this date.[/yellow]")
+            return
+        
+        results = filter_papers(papers, config)
+        print_summary(results)
+        
+        # Save results
+        if args.dry_run:
+            console.print("[yellow]Dry run - not saving filtered results.[/yellow]")
+        else:
+            FILTERED_DIR.mkdir(parents=True, exist_ok=True)
+            output_path = Path(args.output) if args.output else FILTERED_DIR / f"{target_date}.json"
+            
+            save_filtered_results(results, output_path)
+            console.print(f"\n[bold green]✓ Saved filtered results to {output_path}[/bold green]")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

@@ -140,35 +140,34 @@ def main():
     console.print("[bold green]UMAP Projection[/bold green]")
     
     conn = get_db_connection()
-    
-    # Load embeddings
-    embeddings, paper_ids = load_embeddings_and_ids(conn)
-    
-    if len(embeddings) == 0:
-        console.print("[yellow]No embeddings found. Run embed.py first.[/yellow]")
+    try:
+        # Load embeddings
+        embeddings, paper_ids = load_embeddings_and_ids(conn)
+        
+        if len(embeddings) == 0:
+            console.print("[yellow]No embeddings found. Run embed.py first.[/yellow]")
+            return
+        
+        # Run UMAP
+        coords = run_umap(
+            embeddings, 
+            n_neighbors=args.n_neighbors,
+            min_dist=args.min_dist,
+            random_state=args.random_state
+        )
+        
+        # Update database
+        update_coordinates(conn, paper_ids, coords)
+        
+        console.print(f"\n[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
+        
+        # Print coordinate ranges for sanity check
+        x_min, x_max = coords[:, 0].min(), coords[:, 0].max()
+        y_min, y_max = coords[:, 1].min(), coords[:, 1].max()
+        console.print(f"  X range: [{x_min:.2f}, {x_max:.2f}]")
+        console.print(f"  Y range: [{y_min:.2f}, {y_max:.2f}]")
+    finally:
         conn.close()
-        return
-    
-    # Run UMAP
-    coords = run_umap(
-        embeddings, 
-        n_neighbors=args.n_neighbors,
-        min_dist=args.min_dist,
-        random_state=args.random_state
-    )
-    
-    # Update database
-    update_coordinates(conn, paper_ids, coords)
-    
-    conn.close()
-    
-    console.print(f"\n[bold green]✓ Projected {len(paper_ids)} papers to 2D[/bold green]")
-    
-    # Print coordinate ranges for sanity check
-    x_min, x_max = coords[:, 0].min(), coords[:, 0].max()
-    y_min, y_max = coords[:, 1].min(), coords[:, 1].max()
-    console.print(f"  X range: [{x_min:.2f}, {x_max:.2f}]")
-    console.print(f"  Y range: [{y_min:.2f}, {y_max:.2f}]")
 
 
 if __name__ == "__main__":

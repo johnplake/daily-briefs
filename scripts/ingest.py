@@ -423,60 +423,61 @@ def main():
     
     # Get database connection
     conn = get_db_connection()
-    
-    # Process papers
-    stats = {"inserted": 0, "updated": 0, "unchanged": 0, "text_extracted": 0}
-    
-    extract_text = args.extract_text or config.get("storage", {}).get("extract_text", False)
-    
-    if extract_text:
-        console.print("[cyan]Text extraction enabled[/cyan]")
-    
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Processing papers...", total=len(papers))
+    try:
+        # Process papers
+        stats = {"inserted": 0, "updated": 0, "unchanged": 0, "text_extracted": 0}
         
-        for paper in papers:
-            progress.update(task, description=f"Processing {paper['paper_id']}")
+        extract_text = args.extract_text or config.get("storage", {}).get("extract_text", False)
+        
+        if extract_text:
+            console.print("[cyan]Text extraction enabled[/cyan]")
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Processing papers...", total=len(papers))
             
-            text_extracted = False
-            
-            if extract_text:
-                text_path = get_text_path(paper)
+            for paper in papers:
+                progress.update(task, description=f"Processing {paper['paper_id']}")
                 
-                # Check if we need to extract (new paper or version update)
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT version FROM papers WHERE paper_source = ? AND paper_id = ?",
-                    (paper["paper_source"], paper["paper_id"])
-                )
-                existing = cursor.fetchone()
+                text_extracted = False
                 
-                needs_extract = (
-                    existing is None or  # New paper
-                    paper["version"] > existing[0] or  # Version update
-                    not text_path.exists()  # Text file missing
-                )
+                if extract_text:
+                    text_path = get_text_path(paper)
+                    
+                    # Check if we need to extract (new paper or version update)
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT version FROM papers WHERE paper_source = ? AND paper_id = ?",
+                        (paper["paper_source"], paper["paper_id"])
+                    )
+                    existing = cursor.fetchone()
+                    
+                    needs_extract = (
+                        existing is None or  # New paper
+                        paper["version"] > existing[0] or  # Version update
+                        not text_path.exists()  # Text file missing
+                    )
+                    
+                    if needs_extract:
+                        if download_and_extract_text(paper):
+                            text_extracted = True
+                            stats["text_extracted"] += 1
+                        time.sleep(config.get("storage", {}).get("text_extract_delay", 0.5))
+                    else:
+                        text_extracted = text_path.exists()
                 
-                if needs_extract:
-                    if download_and_extract_text(paper):
-                        text_extracted = True
-                        stats["text_extracted"] += 1
-                    time.sleep(config.get("storage", {}).get("text_extract_delay", 0.5))
-                else:
-                    text_extracted = text_path.exists()
-            
-            # Upsert to database
-            action, _ = upsert_paper(conn, paper, text_extracted)
-            stats[action] += 1
-            
-            progress.advance(task)
-    
-    conn.commit()
-    conn.close()
+                # Upsert to database
+                action, _ = upsert_paper(conn, paper, text_extracted)
+                stats[action] += 1
+                
+                progress.advance(task)
+        
+        conn.commit()
+    finally:
+        conn.close()
     
     # Log summary
     summary = f"Ingestion complete: inserted={stats['inserted']}, updated={stats['updated']}, unchanged={stats['unchanged']}"

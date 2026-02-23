@@ -48,8 +48,10 @@ def load_papers(include_hidden: bool = False) -> pd.DataFrame:
         ORDER BY announced_date DESC
     """
     
-    df = pd.read_sql_query(query, conn)
-    conn.close()
+    try:
+        df = pd.read_sql_query(query, conn)
+    finally:
+        conn.close()
     
     # Parse authors JSON
     import json
@@ -84,8 +86,13 @@ def search_papers(query_text: str, include_hidden: bool = False) -> pd.DataFrame
         LIMIT {MAX_SEARCH_RESULTS}
     """
     
-    df = pd.read_sql_query(search_query, conn, params=(query_text,))
-    conn.close()
+    try:
+        df = pd.read_sql_query(search_query, conn, params=(query_text,))
+    except sqlite3.OperationalError as e:
+        # Malformed FTS query
+        return pd.DataFrame()
+    finally:
+        conn.close()
     
     # Parse authors JSON
     import json
@@ -447,17 +454,18 @@ def toggle_hide_paper(n_clicks, paper_id):
         return dash.no_update
     
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT hidden FROM papers WHERE id = ?", (paper_id,))
-    row = cur.fetchone()
-    if row is None:
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT hidden FROM papers WHERE id = ?", (paper_id,))
+        row = cur.fetchone()
+        if row is None:
+            return dash.no_update
+        new_hidden = 0 if row[0] else 1
+        cur.execute("UPDATE papers SET hidden = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_hidden, paper_id))
+        conn.commit()
+        return datetime.utcnow().isoformat()
+    finally:
         conn.close()
-        return dash.no_update
-    new_hidden = 0 if row[0] else 1
-    cur.execute("UPDATE papers SET hidden = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_hidden, paper_id))
-    conn.commit()
-    conn.close()
-    return datetime.utcnow().isoformat()
 
 if __name__ == '__main__':
     # Get dashboard settings from config
