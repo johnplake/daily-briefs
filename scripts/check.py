@@ -23,7 +23,7 @@ import faiss
 from rich.console import Console
 from rich.table import Table
 
-from config import DB_PATH, EMBEDDINGS_DIR, get_db_connection
+from config import DB_PATH, EMBEDDINGS_DIR, TEXT_DIR, get_db_connection
 from logging_config import setup_logging
 
 console = Console()
@@ -235,6 +235,35 @@ def check_fts_sync() -> tuple[bool, dict]:
     return len(issues) == 0, stats
 
 
+def check_text_files() -> tuple[bool, dict]:
+    """Check that text_extracted=1 papers actually have text files."""
+    issues = []
+    stats = {}
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.execute(
+            "SELECT paper_id, paper_source, announced_date FROM papers WHERE text_extracted = 1"
+        )
+        papers = cursor.fetchall()
+        missing = 0
+        for row in papers:
+            text_path = TEXT_DIR / row["paper_source"] / row["announced_date"] / row["paper_id"] / "paper.txt"
+            if not text_path.exists():
+                missing += 1
+        stats["papers_with_flag"] = len(papers)
+        stats["missing_files"] = missing
+        if missing > 0:
+            issues.append(f"{missing} papers have text_extracted=1 but file is missing")
+        conn.close()
+    except Exception as e:
+        issues.append(f"Text file check error: {e}")
+        return False, {"issues": issues}
+    
+    stats["issues"] = issues
+    return len(issues) == 0, stats
+
+
 def run_all_checks() -> dict:
     """Run all sanity checks and return results."""
     results = {}
@@ -268,6 +297,13 @@ def run_all_checks() -> dict:
     results["fts"] = {"ok": ok, **stats}
     status = "[green]✓ OK[/green]" if ok else "[red]✗ ISSUES[/red]"
     console.print(f"  FTS: {status}")
+
+    # Text files
+    console.print("[cyan]Checking text files...[/cyan]")
+    ok, stats = check_text_files()
+    results["text_files"] = {"ok": ok, **stats}
+    status = "[green]✓ OK[/green]" if ok else "[red]✗ ISSUES[/red]"
+    console.print(f"  Text files: {status}")
     
     return results
 

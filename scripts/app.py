@@ -278,7 +278,7 @@ def update_scatter(search_query, category, show_hidden, start_date, end_date, _r
             x=0.5, y=0.5, showarrow=False,
             font=dict(size=20, color="gray")
         )
-        return fig, None
+        return fig, filtered_df.to_json(date_format='iso', orient='split')
     
     # Create scatter plot
     fig = px.scatter(
