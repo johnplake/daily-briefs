@@ -129,6 +129,9 @@ def init_db():
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    # Enable WAL for concurrency
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     
     # Create main schema
     cursor.executescript(SCHEMA)
