@@ -25,3 +25,57 @@ The current Dash/Plotly scatter plot renders **all papers with UMAP coords**. Th
 
 - **Add integration tests** (smoke test: init_db → ingest --dry-run → filter --dry-run → report --dry-run)
 - Add DB integrity tests (FTS sync, FAISS size match)
+
+---
+
+## Multi‑Source Ingestion Refactor (ArXiv + others)
+
+**Goal:** Support ingestion from multiple sources (bioRxiv, SSRN, Crossref, etc.) with a clean, pluggable architecture.
+
+### Proposed structure
+```
+sources/
+  arxiv.py
+  biorxiv.py
+  ssrn.py
+```
+
+### Source interface
+Each source module implements:
+```python
+def fetch(source_config, date) -> list[dict]:
+    # returns list of normalized paper dicts
+```
+
+### Normalized schema (all sources)
+```python
+{
+  "paper_source": "arxiv",
+  "paper_id": "...",
+  "announced_date": "YYYY-MM-DD",
+  "title": "...",
+  "abstract": "...",
+  "authors": JSON,
+  "primary_category": "...",
+  "categories": JSON,
+  "arxiv_url/pdf_url/doi": ...
+}
+```
+
+### Ingest pipeline
+- `ingest.py` loops through configured sources
+- Each source returns normalized dicts
+- `upsert_paper()` handles storage and deduplication
+
+### Date normalization helper
+Add a generic helper:
+```python
+def normalize_date(date_str):
+    # try RFC2822, then ISO, then YYYY/MM/DD, else None
+```
+This should live in `utils.py` and be reused by all sources.
+
+### Notes
+- Current code is **arXiv‑only** (RSS + arXiv metadata).
+- Refactor first, then add new sources incrementally.
+- Each source should own parsing + date normalization.
