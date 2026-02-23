@@ -276,7 +276,11 @@ def download_and_extract_text(paper: dict[str, Any]) -> bool:
     pdf_path = text_path.parent / "paper.pdf"
     
     try:
-        response = requests.get(paper["pdf_url"], timeout=120, stream=True)
+        response = requests.get(
+            paper["pdf_url"],
+            timeout=config.get("storage", {}).get("pdf_timeout_seconds", 60),
+            stream=True
+        )
         response.raise_for_status()
         
         with open(pdf_path, "wb") as f:

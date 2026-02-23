@@ -202,6 +202,7 @@ storage:
   delete_pdf_after_extract: true  # Delete PDF after extracting text (saves space)
   max_source_size_mb: 200      # Skip source files larger than this
   text_extract_delay: 0.5      # Sleep between PDF extractions (avoid rate spikes)
+  pdf_timeout_seconds: 60      # PDF download timeout
 
 # -----------------------------------------------------------------------------
 # REPORTS
