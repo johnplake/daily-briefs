@@ -278,34 +278,41 @@ def download_and_extract_text(paper: dict[str, Any]) -> bool:
     # Download PDF to temp location
     pdf_path = text_path.parent / "paper.pdf"
     
-    try:
-        response = requests.get(
-            paper["pdf_url"],
-            timeout=CONFIG.get("storage", {}).get("pdf_timeout_seconds", 60),
-            stream=True
-        )
-        response.raise_for_status()
-        
-        with open(pdf_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        
-        # Extract text
-        text = extract_text_from_pdf(pdf_path)
-        if text:
-            with open(text_path, "w", encoding="utf-8") as f:
-                f.write(text)
-            # Delete PDF
-            pdf_path.unlink(missing_ok=True)
-            return True
-        else:
+    retries = CONFIG.get("storage", {}).get("pdf_download_retries", 2)
+    timeout = CONFIG.get("storage", {}).get("pdf_timeout_seconds", 60)
+    
+    for attempt in range(retries + 1):
+        try:
+            response = requests.get(
+                paper["pdf_url"],
+                timeout=timeout,
+                stream=True
+            )
+            response.raise_for_status()
+            
+            with open(pdf_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            # Extract text
+            text = extract_text_from_pdf(pdf_path)
+            if text:
+                with open(text_path, "w", encoding="utf-8") as f:
+                    f.write(text)
+                # Delete PDF
+                pdf_path.unlink(missing_ok=True)
+                return True
+            else:
+                pdf_path.unlink(missing_ok=True)
+                return False
+        except Exception as e:
+            if attempt < retries:
+                log_warn(f"PDF download failed for {paper['paper_id']} (attempt {attempt+1}/{retries+1}): {e}")
+                time.sleep(2 ** attempt)
+                continue
+            log_warn(f"Failed to download {paper['paper_id']}: {e}")
             pdf_path.unlink(missing_ok=True)
             return False
-            
-    except Exception as e:
-        log_warn(f"Failed to download {paper['paper_id']}: {e}")
-        pdf_path.unlink(missing_ok=True)
-        return False
 
 
 def upsert_paper(conn: sqlite3.Connection, paper: dict[str, Any], text_extracted: bool) -> tuple[str, bool]:
