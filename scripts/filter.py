@@ -27,9 +27,11 @@ from rich.console import Console
 from rich.table import Table
 
 from config import CONFIG, PROJECT_ROOT, DB_PATH, FILTERED_DIR, FILTERING, get_db_connection, validate_date
+from logging_config import setup_logging
 from utils import safe_json_load
 
 console = Console()
+logger = setup_logging("filter")
 
 # Load filtering weights from config
 CITATION_WEIGHT_S2 = FILTERING["citation_weight_s2"]
@@ -279,6 +281,19 @@ def print_summary(results: dict):
     table.add_row("Total Rejected", str(results["total_rejected"]))
     
     console.print(table)
+    
+    # Log summary for cron runs
+    logger.info(
+        "Filter summary: total=%d, passed=%d, rejected=%d, popular=%d, interest=%d, serendipity=%d, near_misses=%d, random_negatives=%d",
+        results.get("total_papers", 0),
+        results.get("total_passed", 0),
+        results.get("total_rejected", 0),
+        len(results.get("popular", [])),
+        len(results.get("interest", [])),
+        len(results.get("serendipity", [])),
+        len(results.get("near_misses", [])),
+        len(results.get("random_negatives", []))
+    )
 
 
 def main():
