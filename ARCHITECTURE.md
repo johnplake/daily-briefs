@@ -102,6 +102,7 @@ CREATE TABLE papers (
 
 -- Indexes for common queries
 CREATE INDEX idx_announced ON papers(announced_date);
+CREATE INDEX idx_announced_hidden ON papers(announced_date, hidden);
 CREATE INDEX idx_source ON papers(paper_source);
 CREATE INDEX idx_primary_cat ON papers(primary_category);
 CREATE INDEX idx_embedding ON papers(embedding_idx);

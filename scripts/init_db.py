@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS papers (
 
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_announced ON papers(announced_date);
+CREATE INDEX IF NOT EXISTS idx_announced_hidden ON papers(announced_date, hidden);
 CREATE INDEX IF NOT EXISTS idx_source ON papers(paper_source);
 CREATE INDEX IF NOT EXISTS idx_primary_cat ON papers(primary_category);
 CREATE INDEX IF NOT EXISTS idx_embedding ON papers(embedding_idx);
