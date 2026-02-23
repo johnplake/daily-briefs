@@ -147,7 +147,7 @@ def search_abstract(query: str, conn: sqlite3.Connection, k: int = None, include
     where_hidden = "" if include_hidden else "AND p.hidden = 0"
     try:
         cursor = conn.execute(
-            f"""SELECT p.*, bm25(papers_fts) as score 
+            f"""SELECT p.*, bm25(fts) as score 
                FROM papers p
                JOIN papers_fts fts ON p.id = fts.rowid
                WHERE papers_fts MATCH ?
