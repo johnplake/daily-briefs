@@ -244,9 +244,13 @@ def main():
 
             conn.commit()
             save_index(index)
-        finally:
+
+            # Only clear marker after BOTH DB commit + index save succeed
             if MARKER_PATH.exists():
                 MARKER_PATH.unlink(missing_ok=True)
+        except Exception:
+            # Leave marker to force --rebuild on next run
+            raise
 
         console.print(f"\n[bold green]✓ Embedded {len(papers)} papers[/bold green]")
         console.print(f"[bold green]✓ Index now contains {index.ntotal} vectors[/bold green]")
