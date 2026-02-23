@@ -90,6 +90,9 @@ CREATE TABLE papers (
     -- 2D projection (UMAP)
     umap_x           REAL,                    -- 2D x-coordinate for visualization
     umap_y           REAL,                    -- 2D y-coordinate for visualization
+
+    -- Visibility
+    hidden           BOOLEAN DEFAULT 0,       -- 1 = hidden from dashboard/search
     
     -- Text extraction
     text_extracted   BOOLEAN DEFAULT 0,       -- 1 if paper.txt exists
