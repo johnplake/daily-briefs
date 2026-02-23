@@ -380,7 +380,10 @@ def upsert_paper(conn: sqlite3.Connection, paper: dict[str, Any], text_extracted
             paper["authors"],
             paper["categories"],
             paper["version"],
-            paper["announced_date"],  # updated_date = when we saw the new version
+            # We intentionally set updated_date to announced_date (when we saw it)
+            # rather than trusting upstream RSS updated timestamps.
+            # This keeps the "seen" timeline consistent across sources.
+            paper["announced_date"],
             paper["doi"],
             1 if text_extracted else existing_text,
             existing_id,
