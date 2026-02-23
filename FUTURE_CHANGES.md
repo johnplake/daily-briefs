@@ -28,6 +28,31 @@ The current Dash/Plotly scatter plot renders **all papers with UMAP coords**. Th
 
 ---
 
+## Backup Strategy (Document + Optional Automation)
+
+**Goal:** Prevent catastrophic data loss from SQLite corruption or deletion.
+
+### Recommended approach
+- Create a `backups/` folder **outside git** (add to `.gitignore`).
+- Use SQLite’s built‑in `.backup` command (safe with WAL):
+
+```bash
+mkdir -p backups
+sqlite3 data/papers.db ".backup 'backups/papers-$(date +%F).db'"
+```
+
+- Keep last **N** backups (e.g., 7 or 30). Example cleanup:
+
+```bash
+ls -t backups/papers-*.db | tail -n +8 | xargs -r rm
+```
+
+### Automation (optional)
+- Add a daily/weekly cron job to run the backup command.
+- If using cloud storage, sync `backups/` to external storage.
+
+---
+
 ## Multi‑Source Ingestion Refactor (ArXiv + others)
 
 **Goal:** Support ingestion from multiple sources (bioRxiv, SSRN, Crossref, etc.) with a clean, pluggable architecture.
