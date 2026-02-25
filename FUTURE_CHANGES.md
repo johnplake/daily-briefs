@@ -21,6 +21,28 @@ The current Dash/Plotly scatter plot renders **all papers with UMAP coords**. Th
 
 ---
 
+## Cron Jobs: Remove LLM Dependency for Deterministic Tasks
+
+**Problem:** The embeddings cron job uses `agentTurn` (isolated session) to spawn a full LLM agent that just runs shell commands:
+1. `cd` to project dir
+2. Run `embed.py --umap`
+3. Check exit code
+4. Curl healthcheck
+5. Send Telegram notification
+
+This is an expensive bash script interpreter. The task is completely deterministic — no interpretation needed.
+
+**Options:**
+1. **Add `--notify` flag to `embed.py`** — script handles healthcheck ping + Telegram notification itself (eliminates agent entirely)
+2. **Create a shell wrapper script** — `run_embed.sh` does everything, cron just executes it
+3. **Use `systemEvent` to main session** — cheaper model, but still uses LLM unnecessarily
+
+**Recommendation:** Option 1 is cleanest. Scripts should be self-contained and handle their own notifications. The healthcheck URL and Telegram chat ID can come from config or env vars.
+
+**Applies to:** Both `embed.py` and `run_daily.py` cron jobs.
+
+---
+
 ## Other Potential Improvements
 
 - **Add integration tests** (smoke test: init_db → ingest --dry-run → filter --dry-run → report --dry-run)
