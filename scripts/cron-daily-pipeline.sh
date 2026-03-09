@@ -9,8 +9,7 @@ set -uo pipefail
 
 PROJECT_DIR="/home/node/.openclaw/workspace/Projects/daily-briefs"
 HC_URL="https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a"
-TELEGRAM_CHAT="-1003700767295"
-TELEGRAM_TOPIC="934"
+TELEGRAM_CHAT="8441537510"
 TIMEOUT_SECONDS=14400  # 4 hours
 TODAY=$(date +%Y-%m-%d)
 
@@ -20,7 +19,6 @@ TELEGRAM_TOKEN=$(jq -r '.channels.telegram.token' ~/.openclaw/openclaw.json)
 send_telegram() {
     curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
         -d chat_id="$TELEGRAM_CHAT" \
-        -d message_thread_id="$TELEGRAM_TOPIC" \
         -d text="$1" \
         -d parse_mode="Markdown" > /dev/null
 }

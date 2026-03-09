@@ -9,8 +9,7 @@ set -uo pipefail
 
 PROJECT_DIR="/home/node/.openclaw/workspace/Projects/daily-briefs"
 HC_URL="https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a"
-TELEGRAM_CHAT="-1003700767295"
-TELEGRAM_TOPIC="934"
+TELEGRAM_CHAT="8441537510"
 TIMEOUT_SECONDS=7200  # 2 hours
 TODAY=$(date +%Y-%m-%d)
 
@@ -20,7 +19,6 @@ TELEGRAM_TOKEN=$(jq -r '.channels.telegram.token' ~/.openclaw/openclaw.json)
 send_telegram() {
     curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
         -d chat_id="$TELEGRAM_CHAT" \
-        -d message_thread_id="$TELEGRAM_TOPIC" \
         -d text="$1" \
         -d parse_mode="Markdown" > /dev/null
 }
@@ -38,7 +36,7 @@ echo "$(date -Iseconds) Starting daily brief for $TODAY..."
 
 # Step 1: Ingest
 echo "$(date -Iseconds) Step 1: Ingest..."
-if ! INGEST_OUT=$(timeout "$TIMEOUT_SECONDS" .venv/bin/python scripts/ingest.py 2>&1); then
+if ! INGEST_OUT=$(timeout "$TIMEOUT_SECONDS" .venv/bin/python scripts/ingest.py --extract-text 2>&1); then
     fail "Ingest failed: ${INGEST_OUT:0:200}"
 fi
 INSERTED=$(echo "$INGEST_OUT" | grep -oP 'Inserted: \K\d+' || echo "0")
