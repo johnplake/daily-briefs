@@ -274,7 +274,7 @@ def main():
     if not input_path.exists():
         console.print(f"[red]Filtered results not found: {input_path}[/red]")
         console.print("[yellow]Run filter.py first.[/yellow]")
-        return
+        sys.exit(1)
     
     results = load_filtered_results(input_path)
     report = generate_report(results, target_date, config)

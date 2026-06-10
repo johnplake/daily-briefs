@@ -11,7 +11,7 @@ PROJECT_DIR="/home/node/.openclaw/workspace/Projects/daily-briefs"
 HC_URL="https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a"
 TELEGRAM_CHAT="8441537510"
 TIMEOUT_SECONDS=14400  # 4 hours
-TODAY=$(TZ=America/Chicago date +%Y-%m-%d)
+TODAY=$(date -u +%Y-%m-%d)  # UTC to match arXiv announced_date
 
 # Read bot token from openclaw config
 TELEGRAM_TOKEN=$(jq -r '.channels.telegram.botToken // .channels.telegram.token' ~/.openclaw/openclaw.json)
@@ -92,7 +92,7 @@ fi
 # Step 5: Embeddings + UMAP
 # -----------------------------------------------------------------------------
 echo "$(date -Iseconds) Step 5/6: Embeddings + UMAP..."
-if ! EMBED_OUT=$(timeout 7200 .venv/bin/python scripts/embed.py --umap 2>&1); then
+if ! EMBED_OUT=$(timeout 10800 .venv/bin/python scripts/embed.py --umap 2>&1); then
     fail "${EMBED_OUT:0:200}" "Embeddings"
 fi
 EMBEDDED=$(echo "$EMBED_OUT" | grep -oP 'Embedded \K\d+' || echo "0")
