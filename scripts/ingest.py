@@ -438,7 +438,7 @@ def main():
     if not papers:
         logger.info(f"No papers found for {announced_date}")
         console.print("[yellow]No papers found.[/yellow]")
-        return
+        sys.exit(2)
     
     if args.dry_run:
         console.print("[yellow]Dry run - not saving.[/yellow]")

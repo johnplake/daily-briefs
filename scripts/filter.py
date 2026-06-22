@@ -323,7 +323,7 @@ def main():
         
         if not papers:
             console.print("[yellow]No papers found for this date.[/yellow]")
-            return
+            sys.exit(2)
         
         results = filter_papers(papers, config)
         print_summary(results)
