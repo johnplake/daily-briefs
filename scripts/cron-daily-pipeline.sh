@@ -2,31 +2,17 @@
 # Daily arXiv Pipeline - Combined Script
 # Runs the full daily pipeline: ingest → filter → report → embeddings → check
 #
-# System cron entry (8am CST = 14:00 UTC, weekdays):
-#   0 14 * * 1-5 /home/node/.openclaw/workspace/Projects/daily-briefs/scripts/cron-daily-pipeline.sh >> /tmp/daily-pipeline.log 2>&1
+# System/OpenClaw cron entry (02:00 UTC, Mon-Fri):
+#   0 2 * * 1-5 /home/node/.openclaw/workspace/Projects/daily-briefs/scripts/cron-daily-pipeline.sh >> /tmp/daily-pipeline.log 2>&1
 
 set -uo pipefail
 
 PROJECT_DIR="/home/node/.openclaw/workspace/Projects/daily-briefs"
-HC_URL="https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a"
-TELEGRAM_CHAT="8441537510"
 TIMEOUT_SECONDS=14400  # 4 hours
 TODAY=$(date -u +%Y-%m-%d)  # UTC to match arXiv announced_date
 
-# Read bot token from openclaw config
-TELEGRAM_TOKEN=$(jq -r '.channels.telegram.botToken // .channels.telegram.token' ~/.openclaw/openclaw.json)
-
-send_telegram() {
-    curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-        -d chat_id="$TELEGRAM_CHAT" \
-        -d text="$1" \
-        -d parse_mode="Markdown" > /dev/null
-}
-
 fail() {
     echo "$(date -Iseconds) FAILED: $1"
-    curl -fsS --retry 3 "$HC_URL/fail"
-    send_telegram "❌ Daily Pipeline FAILED at $2: $1"
     exit 1
 }
 
@@ -114,15 +100,5 @@ echo "$(date -Iseconds) Sanity check passed"
 echo "$(date -Iseconds) =========================================="
 echo "$(date -Iseconds) Pipeline complete!"
 echo "$(date -Iseconds) =========================================="
-
-curl -fsS --retry 3 "$HC_URL"
-send_telegram "✅ Daily Pipeline complete ($TODAY)
-• Papers ingested: $INSERTED (text: $TEXT_EXTRACTED)
-• Papers selected: $PASSED
-  - Interest: $INTEREST
-  - Serendipity: $SERENDIPITY
-• Embeddings: $EMBEDDED
-• UMAP projections: $PROJECTED
-• Sanity check: ✓"
 
 exit 0
