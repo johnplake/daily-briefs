@@ -49,7 +49,7 @@ Plus feedback candidates:
 
 ## Usage
 
-### Daily Pipeline (cron at 8am Mon-Fri)
+### Daily Pipeline (cron at 12:00 UTC Mon-Fri)
 ```bash
 .venv/bin/python scripts/ingest.py --extract-text
 .venv/bin/python scripts/filter.py --date $(date +%Y-%m-%d)
@@ -107,12 +107,12 @@ Plus feedback candidates:
 
 ## Cron Schedule
 
-| Job | Schedule (CST) | What |
+| Job | Schedule | What |
 |-----|----------------|------|
-| Daily Brief | 8am Mon-Fri | Ingest → filter → report → Telegram summary |
+| Daily Pipeline | 12:00 UTC Mon-Fri | Ingest → filter → report → commit/push → embeddings/UMAP → check |
 | Embeddings | 11:50pm Mon-Fri | `embed.py --umap` (SPECTER + 2D projection) |
 
-Note: arXiv announces papers Sun-Thu at 8pm ET. Running at 8am CST captures the previous night's announcement.
+Note: the restored weekday trigger runs at 12:00 UTC on weekdays. Monday runs can legitimately find no new papers yet; Tuesday's run picks up the Monday announcement batch.
 
 ### Health Monitoring
 

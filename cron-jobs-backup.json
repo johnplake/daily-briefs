@@ -1,15 +1,16 @@
 {
   "description": "Backup of cron job configs for daily-briefs. Recreate after container reinstall if needed.",
-  "updated": "2026-02-22",
+  "updated": "2026-08-29",
   "jobs": [
     {
-      "name": "Daily arXiv Brief",
-      "schedule": {"kind": "cron", "expr": "0 8 * * 1-5", "tz": "America/Chicago"},
+      "name": "Daily arXiv Pipeline",
+      "schedule": {"kind": "cron", "expr": "0 12 * * 1-5", "tz": "Etc/UTC"},
       "sessionTarget": "isolated",
       "payload": {
         "kind": "agentTurn",
-        "message": "Run the daily-briefs pipeline with health monitoring:\n\n1. Run: daily-briefs run_daily --skip-enrich\n2. Check exit code. If it failed:\n   - Run: curl -fsS --retry 3 https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a/fail\n   - Send Telegram to chat -1003700767295 (topic 934): \"❌ Daily Brief FAILED: <error details>\"\n   - Stop here\n3. On success, read the generated report from ~/workspace/Projects/daily-briefs/reports/$(date +%Y-%m-%d).md\n4. Send Telegram summary to chat -1003700767295 (topic 934) with:\n   - ✅ Daily Brief complete\n   - Number of papers ingested\n   - Number selected per stream (Popular/Interest/Serendipity)\n   - Top 3-5 interesting paper titles\n5. Commit and push: cd ~/workspace/Projects/daily-briefs && git add reports/ && git commit -m \"Daily report $(date +%Y-%m-%d)\" && git push\n6. Ping health check: curl -fsS --retry 3 https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a",
-        "model": "anthropic/claude-sonnet-4-5"
+        "message": "Run the full daily arXiv paper pipeline. Use this exact command:\n\ncd /home/node/.openclaw/workspace/Projects/daily-briefs\nPATH=/home/node/.openclaw/workspace/bin:$PATH timeout 14400 bash scripts/cron-daily-pipeline.sh\n\nWait for completion. In your final summary, include whether it succeeded, the report date, and any commit hash or failure stage you can confirm from the command output.",
+        "model": "anthropic/claude-sonnet-4-6",
+        "timeoutSeconds": 14400
       },
       "healthcheck_url": "https://hc-ping.com/a8625459-cc2d-4232-8441-d4091de62f2a"
     },

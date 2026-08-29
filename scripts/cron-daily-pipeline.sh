@@ -2,8 +2,8 @@
 # Daily arXiv Pipeline - Combined Script
 # Runs the full daily pipeline: ingest → filter → report → embeddings → check
 #
-# System/OpenClaw cron entry (02:00 UTC, Mon-Fri):
-#   0 2 * * 1-5 /home/node/.openclaw/workspace/Projects/daily-briefs/scripts/cron-daily-pipeline.sh >> /tmp/daily-pipeline.log 2>&1
+# OpenClaw cron entry (12:00 UTC, Mon-Fri):
+#   0 12 * * 1-5 /home/node/.openclaw/workspace/Projects/daily-briefs/scripts/cron-daily-pipeline.sh >> /tmp/daily-pipeline.log 2>&1
 
 set -uo pipefail
 
