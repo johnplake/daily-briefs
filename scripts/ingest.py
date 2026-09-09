@@ -46,7 +46,7 @@ def log_error(msg: str):
     console.print(f"[red]{msg}[/red]")
 
 # arXiv endpoints
-ARXIV_RSS = "https://export.arxiv.org/rss/{}"
+ARXIV_RSS = "https://rss.arxiv.org/rss/{}"
 
 # Rate limiting (from config)
 RATE_LIMIT_SECONDS = APIS["arxiv_rate_limit"]
