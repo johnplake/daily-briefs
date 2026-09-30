@@ -26,7 +26,7 @@ echo "$(date -Iseconds) =========================================="
 # Step 1: Ingest (with text extraction)
 # -----------------------------------------------------------------------------
 echo "$(date -Iseconds) Step 1/6: Ingest..."
-if ! INGEST_OUT=$(timeout 3600 .venv/bin/python scripts/ingest.py --extract-text 2>&1); then
+if ! INGEST_OUT=$(timeout "$TIMEOUT_SECONDS" .venv/bin/python scripts/ingest.py --extract-text 2>&1); then
     fail "${INGEST_OUT:0:200}" "Ingest"
 fi
 INSERTED=$(echo "$INGEST_OUT" | grep -oP 'Inserted: \K\d+' || echo "0")
